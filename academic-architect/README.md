@@ -1,4 +1,3 @@
-# prosp
 # Academic Architect — MVP Slice
 
 A working end-to-end slice of the Academic Architect product:

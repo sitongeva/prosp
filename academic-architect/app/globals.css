@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply bg-cream text-navy font-sans antialiased;
+  }
+  h1, h2, h3 {
+    @apply font-display tracking-tight text-navy;
+  }
+}
+
+@layer components {
+  /* Progress bar — green gradient fill, used across form steps */
+  .progress-track {
+    @apply h-2 w-full rounded-full bg-navy/10 overflow-hidden;
+  }
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+    background: linear-gradient(90deg, #0F4E3A 0%, #39D77B 100%);
+  }
+
+  /* Step pill (the green "STEP X OF Y" badge) */
+  .step-pill {
+    @apply inline-block px-3 py-1 rounded-full text-xs font-semibold tracking-wider
+           text-accent-deep bg-accent-mint;
+  }
+
+  /* Card container */
+  .card {
+    @apply bg-white rounded-2xl shadow-card p-6 md:p-8;
+  }
+
+  /* Selectable option card (for career goal, path, GPA buckets) */
+  .option-card {
+    @apply bg-white rounded-xl p-5 md:p-6 cursor-pointer transition-all duration-200
+           border-2 border-transparent hover:border-navy/20 hover:-translate-y-0.5;
+  }
+  .option-card[data-selected="true"] {
+    @apply border-navy shadow-card;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 bg-navy text-white rounded-lg
+           px-6 py-3 font-medium transition-all hover:bg-navy-700
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 bg-white text-navy rounded-lg
+           px-6 py-3 font-medium border border-navy/15 transition-all
+           hover:bg-navy/5;
+  }
+
+  /* Sidebar nav item */
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-sm
+           tracking-wider uppercase text-navy/40 transition-colors;
+  }
+  .nav-item[data-active="true"] {
+    @apply bg-white text-navy font-semibold shadow-card;
+  }
+  .nav-item[data-complete="true"] {
+    @apply text-navy/70;
+  }
+}
