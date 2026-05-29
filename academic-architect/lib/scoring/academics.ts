@@ -1,16 +1,20 @@
 // ============================================================================
 // ACADEMIC ARCHITECT — Academics Category Scoring
-// Version: 1.0.0
+// Version: 2.0.0
 // ============================================================================
 // Pure function. Same inputs always produce same outputs.
+// v2 changes: per-exam scoring, self-study bonus, grade-level awareness.
 // ============================================================================
 
 import type {
   AcademicPath,
   AcademicsInput,
   AcademicsResult,
+  ApExamEntry,
   CourseOfferings,
   GpaBucket,
+  GradeLevel,
+  IbExamEntry,
 } from '@/lib/types/scoring';
 
 const GPA_SCORE_TABLE: Record<GpaBucket, Record<AcademicPath, number>> = {
@@ -28,12 +32,43 @@ const OFFERINGS_MIDPOINT: Record<CourseOfferings, number> = {
   unknown:   5,
 };
 
+const GRADE_PROGRESS: Record<GradeLevel, number> = {
+  freshman:  0.15,
+  sophomore: 0.40,
+  junior:    0.70,
+  senior:    1.00,
+};
+
+function apExamPoints(exam: ApExamEntry): number {
+  switch (exam.score) {
+    case 5:         return 3;
+    case 4:         return 2;
+    case 3:         return 1;
+    case 2:         return 0;
+    case 1:         return 0;
+    case 'pending': return 0.5;
+  }
+}
+
+function ibExamPoints(exam: IbExamEntry): number {
+  switch (exam.score) {
+    case 7:         return 3;
+    case 6:         return 2;
+    case 5:         return 1.5;
+    case 4:         return 1;
+    case 3:         return 0;
+    case 2:         return 0;
+    case 1:         return 0;
+    case 'pending': return 0.5;
+  }
+}
+
 function getRigorMultiplier(utilizationPct: number, path: AcademicPath): number {
   const tier =
-    utilizationPct === 0    ? 'none'
-    : utilizationPct <= 25  ? 'low'
-    : utilizationPct <= 50  ? 'moderate'
-    : utilizationPct <= 75  ? 'high'
+    utilizationPct === 0   ? 'none'
+    : utilizationPct <= 25 ? 'low'
+    : utilizationPct <= 50 ? 'moderate'
+    : utilizationPct <= 75 ? 'high'
     : 'maxed';
 
   const table: Record<string, Record<AcademicPath, number>> = {
@@ -61,26 +96,36 @@ function generateSignal(
   score: number,
   gpaSubScore: number,
   rigorMultiplier: number,
-  path: AcademicPath
+  effectiveRigorCount: number,
+  selfStudyBonus: number,
+  apExams: ApExamEntry[],
+  path: AcademicPath,
 ): string {
   const pathLabel = {
-    competitive: 'top-tier',
-    selective: 'selective',
-    state_local: 'your target',
+    competitive:  'top-tier',
+    selective:    'selective',
+    state_local:  'your target',
     trade_career: 'vocational',
   }[path];
 
   if (score >= 90) return `Excellent academic foundation for ${pathLabel} pathways.`;
-  if (score >= 75) return `Strong academic profile, well-aligned with ${pathLabel} expectations.`;
+
+  if (score >= 75) {
+    if (selfStudyBonus > 0)
+      return `Strong academics with the kind of self-directed initiative ${pathLabel} schools notice.`;
+    return `Strong academic profile, well-aligned with ${pathLabel} expectations.`;
+  }
+
   if (score >= 60) {
-    if (gpaSubScore >= 80 && rigorMultiplier < 0.95) {
+    if (gpaSubScore >= 80 && rigorMultiplier < 0.95)
       return `Solid grades, but course rigor may not signal readiness for ${pathLabel} programs.`;
-    }
-    if (gpaSubScore < 70 && rigorMultiplier >= 1.05) {
+    if (gpaSubScore < 70 && rigorMultiplier >= 1.05)
       return `Ambitious schedule, but grades suggest your rigor may be outpacing your performance.`;
-    }
+    if (effectiveRigorCount > 0 && apExams.some(e => e.score === 1 || e.score === 2))
+      return 'AP exam performance is limiting the impact of your rigorous schedule.';
     return `Adequate profile for ${pathLabel} pathways, with room to strengthen.`;
   }
+
   if (score >= 40) return `Below the typical bar for ${pathLabel} schools — meaningful improvement needed.`;
   return `Current academic profile is significantly off-target for ${pathLabel} pathways.`;
 }
@@ -88,15 +133,40 @@ function generateSignal(
 export function calculateAcademicsScore(input: AcademicsInput): AcademicsResult {
   const gpaSubScore = GPA_SCORE_TABLE[input.gpaBucket][input.path];
 
-  const effectiveRigorCount =
-    input.apIbHonorsCount + (input.dualEnrollmentCount * 0.75);
+  // AP exam points
+  const apPoints = input.apExams.reduce((sum, e) => sum + apExamPoints(e), 0);
 
+  // Self-study bonus: +0.5 per self-studied exam with score >= 4
+  const selfStudyBonus = input.apExams
+    .filter(e => e.selfStudied && (e.score === 4 || e.score === 5))
+    .length * 0.5;
+
+  // IB exam points
+  const ibPoints = input.ibExams.reduce((sum, e) => sum + ibExamPoints(e), 0);
+
+  // Partial credit for AP courses on transcript without recorded exam
+  const unrecordedCourses = Math.max(0, input.apCoursesAtSchool - input.apExams.length);
+  const partialCredit = unrecordedCourses * 0.5;
+
+  let effectiveRigorCount = apPoints + selfStudyBonus + ibPoints + partialCredit;
+
+  // Grade-aware expectation
   const offeringsMidpoint = OFFERINGS_MIDPOINT[input.courseOfferings];
-  const utilizationRatio = effectiveRigorCount / offeringsMidpoint;
-  const rigorUtilizationPct = Math.min(100, Math.round(utilizationRatio * 100));
+  const gradeAdjustedExpectation = offeringsMidpoint * GRADE_PROGRESS[input.gradeLevel];
+
+  // Plausibility cap: prevent absurd freshman inputs from breaking the model
+  if (effectiveRigorCount > gradeAdjustedExpectation * 2) {
+    effectiveRigorCount = gradeAdjustedExpectation * 2;
+  }
+
+  const rigorUtilizationPct = Math.min(
+    100,
+    Math.round((effectiveRigorCount / Math.max(0.5, gradeAdjustedExpectation)) * 100),
+  );
 
   let rigorMultiplier = getRigorMultiplier(rigorUtilizationPct, input.path);
 
+  // IB Diploma override
   if (input.isIbDiplomaCandidate &&
       (input.path === 'competitive' || input.path === 'selective')) {
     rigorMultiplier = Math.max(rigorMultiplier, 1.10);
@@ -107,15 +177,21 @@ export function calculateAcademicsScore(input: AcademicsInput): AcademicsResult 
   const rawScore = (gpaSubScore * rigorMultiplier) + cteBonus;
   const score = Math.min(100, Math.round(rawScore));
 
-  const signal = generateSignal(score, gpaSubScore, rigorMultiplier, input.path);
+  const signal = generateSignal(
+    score, gpaSubScore, rigorMultiplier,
+    effectiveRigorCount, selfStudyBonus, input.apExams, input.path,
+  );
 
   return {
     score,
     gpaSubScore,
     rigorMultiplier,
     rigorUtilizationPct,
+    gradeAdjustedUtilizationPct: rigorUtilizationPct,
+    effectiveRigorCount,
+    selfStudyBonus,
     cteBonus,
     signal,
-    scoringVersion: '1.0.0',
+    scoringVersion: '2.0.0',
   };
 }

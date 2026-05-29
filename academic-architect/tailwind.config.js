@@ -1,6 +1,5 @@
-import type { Config } from 'tailwindcss';
-
-const config: Config = {
+/** @type {import('tailwindcss').Config} */
+const config = {
   content: [
     './app/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
@@ -8,22 +7,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Pulled from your mockups
         navy: {
-          DEFAULT: '#0F1F4C',   // primary deep navy (headers, buttons)
+          DEFAULT: '#0F1F4C',
           900: '#0A1638',
           700: '#1A2D5E',
         },
         accent: {
-          green: '#39D77B',     // step pill + progress bar
+          green: '#39D77B',
           mint:  '#A8F0C8',
-          deep:  '#0F4E3A',     // green-dark sidebar callouts
+          deep:  '#0F4E3A',
         },
-        cream: '#F4F4EF',       // page background
+        cream: '#F4F4EF',
         ink: '#0A0A0A',
       },
       fontFamily: {
-        // Distinctive, refined editorial pairing
         display: ['"Fraunces"', 'Georgia', 'serif'],
         sans:    ['"Inter Tight"', 'system-ui', 'sans-serif'],
       },
@@ -34,4 +31,4 @@ const config: Config = {
   },
   plugins: [],
 };
-export default config;
+module.exports = config;

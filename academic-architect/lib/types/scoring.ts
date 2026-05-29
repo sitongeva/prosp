@@ -8,13 +8,22 @@ export type AcademicPath =
   | 'state_local'
   | 'trade_career';
 
-export type CareerGoal =
-  | 'medicine'
-  | 'law'
-  | 'engineering'
-  | 'business'
-  | 'technology'
-  | 'arts_humanities';
+export type CareerCluster =
+  | 'medicine_health'
+  | 'science_research'
+  | 'engineering_tech'
+  | 'business_finance'
+  | 'law_public_service'
+  | 'arts_media_humanities'
+  | 'skilled_trades'
+  | 'service_hospitality'
+  | 'exploring';
+
+export type PathConfidence =
+  | 'locked_in'
+  | 'strongly_leaning'
+  | 'one_of_several'
+  | 'just_guessing';
 
 export type GpaBucket =
   | 'gpa_3_8_to_4_0'
@@ -30,6 +39,22 @@ export type CourseOfferings =
   | 'unknown';
 
 export type GradeLevel = 'freshman' | 'sophomore' | 'junior' | 'senior';
+
+export type ApExamScore = 5 | 4 | 3 | 2 | 1 | 'pending';
+export type IbSubjectScore = 7 | 6 | 5 | 4 | 3 | 2 | 1 | 'pending';
+
+export interface ApExamEntry {
+  id: string;
+  subject: string;
+  score: ApExamScore;
+  selfStudied: boolean;
+}
+
+export interface IbExamEntry {
+  id: string;
+  subject: string;
+  score: IbSubjectScore;
+}
 
 export type ActivityTier =
   | 'tier_1'
@@ -51,11 +76,43 @@ export type ActivityYears =
   | 'years_3'
   | 'years_4_plus';
 
+export type TestStatus = 'sat' | 'act' | 'test_optional' | 'not_taken_yet';
+
+export type SatBucket =
+  | 'sat_1500_1600'
+  | 'sat_1400_1490'
+  | 'sat_1300_1390'
+  | 'sat_1200_1290'
+  | 'sat_below_1200';
+
+export type ActBucket =
+  | 'act_34_36'
+  | 'act_31_33'
+  | 'act_28_30'
+  | 'act_24_27'
+  | 'act_below_24';
+
+export type LeadershipScope =
+  | 'founded'
+  | 'led_established'
+  | 'officer'
+  | 'informal'
+  | 'none_yet';
+
+export type ImpactScope =
+  | 'impact_20_plus'
+  | 'impact_5_19'
+  | 'impact_1_4'
+  | 'impact_solo'
+  | 'impact_unsure';
+
 export interface AcademicsInput {
   path: AcademicPath;
   gpaBucket: GpaBucket;
-  apIbHonorsCount: number;
-  dualEnrollmentCount: number;
+  gradeLevel: GradeLevel;
+  apCoursesAtSchool: number;
+  apExams: ApExamEntry[];
+  ibExams: IbExamEntry[];
   courseOfferings: CourseOfferings;
   isIbDiplomaCandidate: boolean;
   hasCteCredential: boolean;
@@ -66,6 +123,9 @@ export interface AcademicsResult {
   gpaSubScore: number;
   rigorMultiplier: number;
   rigorUtilizationPct: number;
+  gradeAdjustedUtilizationPct: number;
+  effectiveRigorCount: number;
+  selfStudyBonus: number;
   cteBonus: number;
   signal: string;
   scoringVersion: string;
@@ -89,15 +149,46 @@ export interface ActivitiesResult {
   scoringVersion: string;
 }
 
-// The user's full form submission — we'll extend this as we add categories
+export interface TestingInput {
+  path: AcademicPath;
+  testStatus: TestStatus;
+  satBucket: SatBucket | null;
+  actBucket: ActBucket | null;
+}
+
+export interface TestingResult {
+  score: number;
+  baseScore: number;
+  signal: string;
+  scoringVersion: string;
+}
+
+export interface LeadershipInput {
+  path: AcademicPath;
+  leadershipScope: LeadershipScope;
+  impactScope: ImpactScope;
+  hasMeasurableOutcome: boolean;
+}
+
+export interface LeadershipResult {
+  score: number;
+  baseScore: number;
+  scopeMultiplier: number;
+  outcomeBonus: number;
+  signal: string;
+  scoringVersion: string;
+}
+
 export interface FullProfileInput {
-  careerGoal: CareerGoal | null;
+  careerGoal: CareerCluster | null;
+  pathConfidence: PathConfidence | null;
   path: AcademicPath | null;
   gradeLevel: GradeLevel | null;
   intendedMajor: string;
   gpaBucket: GpaBucket | null;
-  apIbHonorsCount: number;
-  dualEnrollmentCount: number;
+  apCoursesAtSchool: number;
+  apExams: ApExamEntry[];
+  ibExams: IbExamEntry[];
   courseOfferings: CourseOfferings;
   isIbDiplomaCandidate: boolean;
   hasCteCredential: boolean;
@@ -106,4 +197,11 @@ export interface FullProfileInput {
   yearsOnTop: ActivityYears | null;
   hasSpike: boolean;
   activityTheme: string;
+  selectedApCourses: string[];
+  testStatus: TestStatus | null;
+  satBucket: SatBucket | null;
+  actBucket: ActBucket | null;
+  leadershipScope: LeadershipScope | null;
+  impactScope: ImpactScope | null;
+  hasMeasurableOutcome: boolean;
 }

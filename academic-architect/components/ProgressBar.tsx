@@ -1,5 +1,7 @@
+'use client';
+
 interface ProgressBarProps {
-  current: number;  // 1-indexed
+  current: number;
   total: number;
 }
 

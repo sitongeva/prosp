@@ -4,10 +4,13 @@
 
 @layer base {
   html, body {
-    @apply bg-cream text-navy font-sans antialiased;
+    background-color: #F4F4EF;
+    color: #0F1F4C;
+    @apply font-sans antialiased;
   }
   h1, h2, h3 {
-    @apply font-display tracking-tight text-navy;
+    color: #0F1F4C;
+    @apply font-display tracking-tight;
   }
 }
 

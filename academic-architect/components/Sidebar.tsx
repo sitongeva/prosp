@@ -2,7 +2,14 @@
 
 import Link from 'next/link';
 
-export type StepKey = 'identity' | 'path' | 'foundation' | 'activities' | 'review';
+export type StepKey =
+  | 'identity'
+  | 'path'
+  | 'foundation'
+  | 'activities'
+  | 'testing'
+  | 'leadership'
+  | 'review';
 
 interface SidebarProps {
   currentStep: StepKey;
@@ -15,6 +22,8 @@ const STEPS: { key: StepKey; label: string }[] = [
   { key: 'path',       label: 'Academic Path' },
   { key: 'foundation', label: 'Foundation' },
   { key: 'activities', label: 'Activities' },
+  { key: 'testing',    label: 'Testing' },
+  { key: 'leadership', label: 'Leadership' },
   { key: 'review',     label: 'Review' },
 ];
 
