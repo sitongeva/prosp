@@ -3,7 +3,42 @@ import { calculateAcademicsScore } from '@/lib/scoring/academics';
 import { calculateActivitiesScore } from '@/lib/scoring/activities';
 import type {
   AcademicPath, ActivityCount, ActivityTier, ActivityYears, CourseOfferings, GpaBucket,
+  AcademicsResult, ActivitiesResult,
 } from '@/lib/types/scoring';
+
+function academicsInsight(path: AcademicPath, result: AcademicsResult): string[] {
+  const benchmarks: Record<AcademicPath, string> = {
+    competitive: 'Top-tier colleges (Ivy League, MIT, Stanford) typically admit students with a 3.8–4.0 GPA and 8+ AP or IB courses.',
+    selective: 'Selective colleges generally look for a 3.5+ GPA and a solid mix of AP, IB, or honors coursework.',
+    state_local: 'Most state universities are accessible with a 3.0+ GPA and standard coursework.',
+    trade_career: 'Vocational programs prioritize hands-on skills and certifications over traditional GPA metrics.',
+  };
+  const points = [benchmarks[path]];
+  if (result.gpaSubScore >= 90) points.push('Your GPA is in the top range — a strong foundation for your target path.');
+  else if (result.gpaSubScore >= 70) points.push('Your GPA is solid, but bringing it higher would strengthen your competitiveness.');
+  else points.push('Your GPA is below the typical benchmark. Focusing on grade recovery should be a near-term priority.');
+  if (result.rigorUtilizationPct >= 80) points.push("You're taking full advantage of the rigorous courses your school offers — exactly what admissions looks for.");
+  else if (result.rigorUtilizationPct >= 40) points.push("There's room to add more AP or IB courses. Even 1–2 more would noticeably strengthen your profile.");
+  else points.push('Adding AP, IB, or honors courses is one of the highest-leverage moves you can make to improve this score.');
+  return points;
+}
+
+function activitiesInsight(path: AcademicPath, result: ActivitiesResult): string[] {
+  const benchmarks: Record<AcademicPath, string> = {
+    competitive: 'Top colleges look for nationally or regionally recognized achievements — not just participation, but real distinction.',
+    selective: 'Selective schools value consistent leadership, state-level recognition, and sustained commitment over time.',
+    state_local: 'State schools appreciate school leadership, community involvement, and a track record of follow-through.',
+    trade_career: 'Vocational programs value relevant internships, apprenticeships, and hands-on project experience.',
+  };
+  const points = [benchmarks[path]];
+  if (result.baseScore >= 90) points.push('Your top activity demonstrates exactly the kind of achievement that stands out in applications.');
+  else if (result.baseScore >= 60) points.push('You have a credible foundation. Pushing toward a higher-distinction role — state or national level — would make a meaningful difference.');
+  else points.push('Building toward a leadership role or more recognized achievement would significantly strengthen this part of your profile.');
+  if (result.countMultiplier < 1.0 && result.baseScore >= 60) points.push('You have strong peak achievements but fewer total activities. Adding 1–2 more committed involvements would round out your profile.');
+  if (result.spikeBonus > 0) points.push('Having a clear theme across your activities is a real differentiator — it lets you tell a cohesive story about who you are.');
+  else points.push('Look for connections between your activities. A clear shared theme or role — even a subtle one — makes your application narrative significantly stronger.');
+  return points;
+}
 
 interface PageProps {
   searchParams: Record<string, string | undefined>;
@@ -87,34 +122,26 @@ export default function ResultsPage({ searchParams }: PageProps) {
           Architecture Insight
         </p>
         <h3 className="font-display text-2xl mb-6 text-white">
-          How these scores were calculated
+          What this means for you
         </h3>
 
         <div className="grid md:grid-cols-2 gap-8">
           <div>
             <p className="text-xs tracking-widest uppercase text-white/50 mb-3">Academics</p>
-            <ul className="space-y-2 text-sm text-white/80">
-              <li>GPA sub-score: <strong className="text-white">{academicsResult.gpaSubScore}/100</strong></li>
-              <li>Rigor multiplier: <strong className="text-white">{academicsResult.rigorMultiplier}×</strong></li>
-              <li>Rigor utilization: <strong className="text-white">{academicsResult.rigorUtilizationPct}%</strong></li>
-              {academicsResult.cteBonus > 0 && (
-                <li>CTE bonus: <strong className="text-white">+{academicsResult.cteBonus}</strong></li>
-              )}
+            <ul className="space-y-3 text-sm text-white/80">
+              {academicsInsight(path, academicsResult).map((point, i) => (
+                <li key={i} className="leading-relaxed">{point}</li>
+              ))}
             </ul>
-            <p className="mt-4 text-xs text-white/40">v{academicsResult.scoringVersion}</p>
           </div>
 
           <div>
             <p className="text-xs tracking-widest uppercase text-white/50 mb-3">Activities</p>
-            <ul className="space-y-2 text-sm text-white/80">
-              <li>Base score: <strong className="text-white">{activitiesResult.baseScore}/100</strong></li>
-              <li>Count multiplier: <strong className="text-white">{activitiesResult.countMultiplier}×</strong></li>
-              <li>Years multiplier: <strong className="text-white">{activitiesResult.yearsMultiplier}×</strong></li>
-              {activitiesResult.spikeBonus > 0 && (
-                <li>Spike bonus: <strong className="text-white">+{activitiesResult.spikeBonus}</strong></li>
-              )}
+            <ul className="space-y-3 text-sm text-white/80">
+              {activitiesInsight(path, activitiesResult).map((point, i) => (
+                <li key={i} className="leading-relaxed">{point}</li>
+              ))}
             </ul>
-            <p className="mt-4 text-xs text-white/40">v{activitiesResult.scoringVersion}</p>
           </div>
         </div>
       </div>

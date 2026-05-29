@@ -52,18 +52,18 @@ const OFFERINGS_OPTIONS: { key: CourseOfferings; label: string }[] = [
 ];
 
 const GRADES: { key: GradeLevel; label: string }[] = [
-  { key: 'freshman',   label: 'Freshman (Year 1)' },
-  { key: 'sophomore',  label: 'Sophomore (Year 2)' },
-  { key: 'junior',     label: 'Junior (Year 3)' },
-  { key: 'senior',     label: 'Senior (Year 4)' },
+  { key: 'freshman',   label: 'Grade 9' },
+  { key: 'sophomore',  label: 'Grade 10' },
+  { key: 'junior',     label: 'Grade 11' },
+  { key: 'senior',     label: 'Grade 12' },
 ];
 
 const ACTIVITY_TIERS: { key: ActivityTier; label: string; blurb: string }[] = [
-  { key: 'tier_1',      label: 'Tier 1 — National/International', blurb: 'USAMO finalist, ISEF, national-ranked athlete, published research' },
-  { key: 'tier_2',      label: 'Tier 2 — State/Regional Recognition', blurb: 'State orchestra, student body president, all-state athlete' },
-  { key: 'tier_3',      label: 'Tier 3 — School Leadership', blurb: 'Team captain, club president, founded a school organization' },
-  { key: 'tier_4',      label: 'Tier 4 — Active Member', blurb: 'Regular participation in clubs, teams, or volunteer roles' },
-  { key: 'none_unsure', label: 'None yet / Not sure', blurb: "We'll help you build toward your first tier" },
+  { key: 'tier_1',      label: 'National / International', blurb: 'USAMO finalist, ISEF, national-ranked athlete, published research' },
+  { key: 'tier_2',      label: 'State / Regional Recognition', blurb: 'State orchestra, student body president, all-state athlete' },
+  { key: 'tier_3',      label: 'School Leadership', blurb: 'Team captain, club president, founded a school organization' },
+  { key: 'tier_4',      label: 'Active Participant', blurb: 'Regular participation in clubs, teams, or volunteer roles' },
+  { key: 'none_unsure', label: 'None yet / Not sure', blurb: "We'll help you build toward your first activity" },
 ];
 
 const ACTIVITY_COUNTS: { key: ActivityCount; label: string }[] = [
@@ -80,6 +80,38 @@ const ACTIVITY_YEARS: { key: ActivityYears; label: string }[] = [
   { key: 'years_3',      label: '3 years' },
   { key: 'years_4_plus', label: '4+ years' },
 ];
+
+// Label maps for the review screen
+const CAREER_GOAL_LABEL: Record<string, string> = {
+  medicine: 'Medicine', law: 'Law', engineering: 'Engineering',
+  business: 'Business', technology: 'Technology', arts_humanities: 'Arts & Humanities',
+};
+const PATH_LABEL: Record<string, string> = {
+  competitive: 'Competitive college', selective: 'Selective college',
+  state_local: 'State / local college', trade_career: 'Trade / career',
+};
+const GRADE_LABEL: Record<string, string> = {
+  freshman: 'Grade 9', sophomore: 'Grade 10', junior: 'Grade 11', senior: 'Grade 12',
+};
+const GPA_LABEL: Record<string, string> = {
+  gpa_3_8_to_4_0: '3.8 – 4.0', gpa_3_5_to_3_79: '3.5 – 3.79',
+  gpa_3_0_to_3_49: '3.0 – 3.49', gpa_below_3_0: 'Below 3.0',
+};
+const OFFERINGS_LABEL: Record<string, string> = {
+  limited: '0–2 (limited)', moderate: '3–7 (moderate)',
+  robust: '8–15 (robust)', extensive: '16+ (extensive)', unknown: "I don't know",
+};
+const TIER_LABEL: Record<string, string> = {
+  tier_1: 'National / International', tier_2: 'State / Regional Recognition',
+  tier_3: 'School Leadership', tier_4: 'Active Participant', none_unsure: 'None yet',
+};
+const COUNT_LABEL: Record<string, string> = {
+  count_0: '0', count_1: '1', count_2_3: '2–3', count_4_5: '4–5', count_6_plus: '6+',
+};
+const YEARS_LABEL: Record<string, string> = {
+  years_lt_1: 'Less than 1 year', years_1_2: '1–2 years',
+  years_3: '3 years', years_4_plus: '4+ years',
+};
 
 // ---------------------------------------------------------------------------
 // The form
@@ -114,6 +146,7 @@ export default function AuditPage() {
     activityCount: null,
     yearsOnTop: null,
     hasSpike: false,
+    activityTheme: '',
   });
 
   const update = <K extends keyof FullProfileInput>(key: K, value: FullProfileInput[K]) =>
@@ -123,7 +156,10 @@ export default function AuditPage() {
     if (step === 1) return profile.careerGoal !== null;
     if (step === 2) return profile.path !== null;
     if (step === 3) return profile.gpaBucket !== null && profile.gradeLevel !== null;
-    if (step === 4) return profile.highestTier !== null && profile.activityCount !== null && profile.yearsOnTop !== null;
+    if (step === 4) {
+      const noActivities = profile.activityCount === 'count_0' || profile.highestTier === 'none_unsure';
+      return profile.highestTier !== null && profile.activityCount !== null && (noActivities || profile.yearsOnTop !== null);
+    }
     return true;
   })();
 
@@ -150,7 +186,11 @@ export default function AuditPage() {
 
   return (
     <div className="min-h-screen flex">
-      <Sidebar currentStep={STEP_TO_KEY[step]} completedSteps={completedSteps} />
+      <Sidebar
+        currentStep={STEP_TO_KEY[step]}
+        completedSteps={completedSteps}
+        onNavigate={(key) => setStep(Number(Object.entries(STEP_TO_KEY).find(([, v]) => v === key)?.[0]))}
+      />
 
       <main className="flex-1 px-6 md:px-16 py-10 md:py-16 max-w-5xl">
         <div className="step-pill mb-6">STEP {step} OF {TOTAL_STEPS}</div>
@@ -350,28 +390,39 @@ function StepFoundation({
 }
 
 function StepReview({ profile }: { profile: FullProfileInput }) {
+  const noActivities = profile.activityCount === 'count_0' || profile.highestTier === 'none_unsure';
   return (
     <>
       <h1 className="font-display text-4xl md:text-5xl mb-4">
         Ready to see your score?
       </h1>
       <p className="text-navy/60 max-w-xl mb-10">
-        Here's what we'll analyze. Click below to generate your Academic
-        Foundation score.
+        Review what you've entered below. Go back to make any changes before we calculate your score.
       </p>
-      <div className="card max-w-2xl space-y-3 text-sm">
-        <Row label="Career goal"    value={profile.careerGoal ?? '—'} />
-        <Row label="Academic path"  value={profile.path ?? '—'} />
-        <Row label="Grade level"    value={profile.gradeLevel ?? '—'} />
-        <Row label="GPA range"      value={profile.gpaBucket ?? '—'} />
-        <Row label="AP/IB/Honors"   value={String(profile.apIbHonorsCount)} />
-        <Row label="School offers"  value={profile.courseOfferings} />
-        <Row label="IB Diploma"     value={profile.isIbDiplomaCandidate ? 'Yes' : 'No'} />
-        <Row label="CTE pathway"    value={profile.hasCteCredential ? 'Yes' : 'No'} />
-        <Row label="Highest tier"   value={profile.highestTier ?? '—'} />
-        <Row label="Activity count" value={profile.activityCount ?? '—'} />
-        <Row label="Years on top"   value={profile.yearsOnTop ?? '—'} />
-        <Row label="Spike"          value={profile.hasSpike ? 'Yes' : 'No'} />
+      <div className="card max-w-2xl text-sm">
+        <p className="text-xs tracking-wider uppercase text-navy/40 font-semibold mb-4">Academic Profile</p>
+        <div className="space-y-3 mb-6">
+          <Row label="Career goal"       value={profile.careerGoal ? CAREER_GOAL_LABEL[profile.careerGoal] : '—'} />
+          <Row label="Academic path"     value={profile.path ? PATH_LABEL[profile.path] : '—'} />
+          <Row label="Current grade"     value={profile.gradeLevel ? GRADE_LABEL[profile.gradeLevel] : '—'} />
+          <Row label="GPA range"         value={profile.gpaBucket ? GPA_LABEL[profile.gpaBucket] : '—'} />
+          <Row label="AP / IB / Honors courses taken" value={`${profile.apIbHonorsCount} course${profile.apIbHonorsCount !== 1 ? 's' : ''}`} />
+          <Row label="School's AP/IB offerings" value={OFFERINGS_LABEL[profile.courseOfferings]} />
+          {profile.isIbDiplomaCandidate && <Row label="IB Diploma candidate" value="Yes" />}
+          {profile.hasCteCredential && <Row label="CTE pathway" value="Yes" />}
+        </div>
+
+        <p className="text-xs tracking-wider uppercase text-navy/40 font-semibold mb-4 pt-4 border-t border-navy/5">Activities</p>
+        <div className="space-y-3">
+          <Row label="Most distinguished activity" value={profile.highestTier ? TIER_LABEL[profile.highestTier] : '—'} />
+          <Row label="Number of activities"        value={profile.activityCount ? `${COUNT_LABEL[profile.activityCount]} activities` : '—'} />
+          {!noActivities && profile.yearsOnTop && (
+            <Row label="Years in top activity" value={YEARS_LABEL[profile.yearsOnTop]} />
+          )}
+          {profile.activityTheme.trim() && (
+            <Row label="Activity theme" value={profile.activityTheme} />
+          )}
+        </div>
       </div>
     </>
   );
@@ -380,6 +431,8 @@ function StepReview({ profile }: { profile: FullProfileInput }) {
 function StepActivities({
   profile, update,
 }: { profile: FullProfileInput; update: <K extends keyof FullProfileInput>(k: K, v: FullProfileInput[K]) => void }) {
+  const noActivities = profile.activityCount === 'count_0' || profile.highestTier === 'none_unsure';
+
   return (
     <>
       <h1 className="font-display text-4xl md:text-5xl mb-4">
@@ -408,13 +461,13 @@ function StepActivities({
           ))}
         </div>
         <p className="text-xs italic text-navy/50">
-          Why we ask: Admissions officers tier activities by distinction. Yours sets your ceiling.
+          Admissions officers assess activities by level of distinction. Your highest achievement sets the ceiling for this score.
         </p>
       </div>
 
       <div className="mb-10">
         <h3 className="font-display text-xl mb-2">
-          How many substantive activities are you committed to?
+          How many activities are you actively involved in?
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
           {ACTIVITY_COUNTS.map((c) => (
@@ -432,47 +485,54 @@ function StepActivities({
           ))}
         </div>
         <p className="text-xs text-navy/50 italic">
-          Activities you've spent at least ~50 hours on in the past year.
+          Count any club, sport, job, volunteer work, or personal project you're regularly involved in.
         </p>
       </div>
 
-      <div className="mb-10">
-        <h3 className="font-display text-xl mb-2">
-          How long have you been doing your top activity?
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {ACTIVITY_YEARS.map((y) => (
-            <button
-              key={y.key}
-              onClick={() => update('yearsOnTop', y.key)}
-              className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all ${
-                profile.yearsOnTop === y.key
-                  ? 'bg-navy text-white border-navy'
-                  : 'bg-white text-navy border-navy/10 hover:border-navy/30'
-              }`}
-            >
-              {y.label}
-            </button>
-          ))}
+      {!noActivities && (
+        <div className="mb-10">
+          <h3 className="font-display text-xl mb-2">
+            How long have you been doing your top activity?
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {ACTIVITY_YEARS.map((y) => (
+              <button
+                key={y.key}
+                onClick={() => update('yearsOnTop', y.key)}
+                className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all ${
+                  profile.yearsOnTop === y.key
+                    ? 'bg-navy text-white border-navy'
+                    : 'bg-white text-navy border-navy/10 hover:border-navy/30'
+                }`}
+              >
+                {y.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div>
-        <label className="flex items-start gap-3 cursor-pointer">
+      {!noActivities && (
+        <div>
+          <h3 className="font-display text-xl mb-2">
+            Do your activities share a common theme, role, or interest? <span className="text-navy/40 font-normal text-base">(optional)</span>
+          </h3>
           <input
-            type="checkbox"
-            checked={profile.hasSpike}
-            onChange={(e) => update('hasSpike', e.target.checked)}
-            className="w-5 h-5 mt-0.5 accent-navy shrink-0"
+            type="text"
+            value={profile.activityTheme}
+            onChange={(e) => {
+              const theme = e.target.value;
+              update('activityTheme', theme);
+              update('hasSpike', theme.trim().length > 0);
+            }}
+            placeholder="e.g., VP of Finance in 3 clubs, or debate + journalism + writing"
+            className="w-full border-b-2 border-navy/15 focus:border-navy outline-none py-2 text-base bg-transparent"
           />
-          <span className="font-medium">
-            Two or more of my activities connect to a single interest or theme.
-          </span>
-        </label>
-        <p className="text-xs text-navy/50 italic mt-2 ml-8">
-          e.g., debate + Model UN + political journalism = political/civic spike
-        </p>
-      </div>
+          <p className="text-xs text-navy/50 italic mt-2">
+            A clear thread across your activities — even a shared role like leadership or finance — makes your application story stronger. Leave blank if not applicable.
+          </p>
+        </div>
+      )}
     </>
   );
 }

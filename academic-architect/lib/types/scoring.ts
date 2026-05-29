@@ -105,4 +105,5 @@ export interface FullProfileInput {
   activityCount: ActivityCount | null;
   yearsOnTop: ActivityYears | null;
   hasSpike: boolean;
+  activityTheme: string;
 }
