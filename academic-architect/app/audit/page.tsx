@@ -14,20 +14,24 @@ import type {
   ApExamScore,
   CareerCluster,
   CourseOfferings,
+  FirstGenStatus,
   FullProfileInput,
   GpaBucket,
   GradeLevel,
   IbExamEntry,
   IbSubjectScore,
   ImpactScope,
+  IncomeBand,
   LeadershipScope,
   PathConfidence,
+  RegionType,
   SatBucket,
+  SchoolType,
   TestStatus,
 } from '@/lib/types/scoring';
 
 // ---------------------------------------------------------------------------
-// Option data — what shows on each step's selection cards
+// Option data
 // ---------------------------------------------------------------------------
 
 const CAREER_CLUSTERS: { key: CareerCluster; label: string; blurb: string }[] = [
@@ -69,13 +73,6 @@ const OFFERINGS_OPTIONS: { key: CourseOfferings; label: string }[] = [
   { key: 'robust',    label: '8 – 15 (robust)' },
   { key: 'extensive', label: '16+ (extensive)' },
   { key: 'unknown',   label: "I don't know" },
-];
-
-const GRADES: { key: GradeLevel; label: string }[] = [
-  { key: 'freshman',   label: 'Grade 9' },
-  { key: 'sophomore',  label: 'Grade 10' },
-  { key: 'junior',     label: 'Grade 11' },
-  { key: 'senior',     label: 'Grade 12' },
 ];
 
 const ACTIVITY_TIERS: { key: ActivityTier; label: string; blurb: string }[] = [
@@ -124,7 +121,8 @@ const PATH_LABEL: Record<string, string> = {
   state_local: 'State / local college', trade_career: 'Trade / career',
 };
 const GRADE_LABEL: Record<string, string> = {
-  freshman: 'Grade 9', sophomore: 'Grade 10', junior: 'Grade 11', senior: 'Grade 12',
+  freshman: 'Grade 9 (Freshman)', sophomore: 'Grade 10 (Sophomore)',
+  junior: 'Grade 11 (Junior)', senior: 'Grade 12 (Senior)',
 };
 const GPA_LABEL: Record<string, string> = {
   gpa_3_8_to_4_0: '3.8 – 4.0', gpa_3_5_to_3_79: '3.5 – 3.79',
@@ -145,6 +143,57 @@ const YEARS_LABEL: Record<string, string> = {
   years_lt_1: 'Less than 1 year', years_1_2: '1–2 years',
   years_3: '3 years', years_4_plus: '4+ years',
 };
+const TEST_STATUS_LABEL: Record<string, string> = {
+  sat: 'SAT', act: 'ACT', test_optional: 'Test-optional',
+  not_taken_yet: "Haven't taken yet", not_planning: 'Not planning to test',
+};
+const SAT_LABEL: Record<string, string> = {
+  sat_1500_1600: '1500–1600', sat_1400_1490: '1400–1490', sat_1300_1390: '1300–1390',
+  sat_1200_1290: '1200–1290', sat_below_1200: 'Below 1200',
+};
+const ACT_LABEL: Record<string, string> = {
+  act_34_36: '34–36', act_31_33: '31–33', act_28_30: '28–30',
+  act_24_27: '24–27', act_below_24: 'Below 24',
+};
+const LEADERSHIP_LABEL: Record<string, string> = {
+  founded: 'Founded / built something', led_established: 'Led an established organization',
+  officer: 'Officer / coordinator', informal: 'Informal leader', none_yet: 'No formal role yet',
+};
+const IMPACT_LABEL: Record<string, string> = {
+  impact_20_plus: 'Led 20+ people', impact_5_19: 'Led 5–19 people',
+  impact_1_4: 'Led 1–4 people', impact_solo: 'Solo / individual', impact_unsure: 'Not sure / N/A',
+};
+const SCHOOL_TYPE_LABEL: Record<string, string> = {
+  public: 'Public high school', private: 'Private', charter: 'Charter',
+  magnet: 'Magnet', homeschool: 'Homeschool', online: 'Online school',
+  boarding: 'Boarding school', other: 'Other',
+};
+const REGION_LABEL: Record<string, string> = {
+  urban: 'Urban', suburban: 'Suburban', small_town: 'Small town', rural: 'Rural',
+};
+const FIRST_GEN_LABEL: Record<string, string> = {
+  first_gen: 'Yes, first-generation', not_first_gen: 'No', prefer_not_say: 'Prefer not to say',
+};
+
+// Demographics option data
+const SCHOOL_TYPES: { key: SchoolType; label: string }[] = [
+  { key: 'public',     label: 'Public high school' },
+  { key: 'private',    label: 'Private (non-religious)' },
+  { key: 'private',    label: 'Private (religious)' },
+  { key: 'charter',    label: 'Charter' },
+  { key: 'magnet',     label: 'Magnet' },
+  { key: 'homeschool', label: 'Homeschool' },
+  { key: 'online',     label: 'Online school' },
+  { key: 'boarding',   label: 'Boarding school' },
+  { key: 'other',      label: 'Other' },
+];
+
+const REGION_TYPES: { key: RegionType; label: string }[] = [
+  { key: 'urban',      label: 'Urban' },
+  { key: 'suburban',   label: 'Suburban' },
+  { key: 'small_town', label: 'Small town' },
+  { key: 'rural',      label: 'Rural' },
+];
 
 // AP course master list grouped by category
 const AP_COURSE_GROUPS: { category: string; courses: string[] }[] = [
@@ -204,10 +253,11 @@ const AP_COURSE_GROUPS: { category: string; courses: string[] }[] = [
 
 // Testing option data
 const TEST_STATUSES: { key: TestStatus; label: string; blurb: string }[] = [
-  { key: 'sat',           label: 'Submitted SAT score',    blurb: 'I have an SAT score I plan to submit' },
-  { key: 'act',           label: 'Submitted ACT score',    blurb: 'I have an ACT score I plan to submit' },
-  { key: 'test_optional', label: 'Test-optional',          blurb: "I'm applying test-optional / not submitting scores" },
-  { key: 'not_taken_yet', label: "Haven't taken yet",      blurb: "I plan to take a test but haven't yet" },
+  { key: 'sat',          label: 'Submitted SAT score',    blurb: 'I have an SAT score I plan to submit' },
+  { key: 'act',          label: 'Submitted ACT score',    blurb: 'I have an ACT score I plan to submit' },
+  { key: 'test_optional', label: 'Test-optional',         blurb: "I'm applying test-optional / not submitting scores" },
+  { key: 'not_taken_yet', label: "Haven't taken yet",     blurb: "I plan to take a test but haven't yet" },
+  { key: 'not_planning', label: 'Not planning to take',   blurb: "I'm exiting the testing track entirely" },
 ];
 const SAT_BUCKETS: { key: SatBucket; label: string }[] = [
   { key: 'sat_1500_1600', label: '1500 – 1600' },
@@ -222,6 +272,14 @@ const ACT_BUCKETS: { key: ActBucket; label: string }[] = [
   { key: 'act_28_30',    label: '28 – 30' },
   { key: 'act_24_27',    label: '24 – 27' },
   { key: 'act_below_24', label: 'Below 24' },
+];
+
+// Trade/career testing options
+const TRADE_TEST_STATUSES: { key: TestStatus; label: string; blurb: string }[] = [
+  { key: 'sat',           label: 'Earned trade certifications', blurb: 'OSHA, CDL, EPA 608, etc.' },
+  { key: 'not_taken_yet', label: 'Working toward certifications', blurb: 'Currently studying or in a program' },
+  { key: 'test_optional', label: 'SAT or ACT for community college', blurb: 'I have a test score for community college admission' },
+  { key: 'not_planning',  label: 'No tests or certifications planned', blurb: 'Not pursuing this track right now' },
 ];
 
 // Leadership option data
@@ -240,41 +298,21 @@ const IMPACT_SCOPES: { key: ImpactScope; label: string }[] = [
   { key: 'impact_unsure',  label: 'Not sure / N/A' },
 ];
 
-// Testing + Leadership label maps for review screen
-const TEST_STATUS_LABEL: Record<string, string> = {
-  sat: 'SAT', act: 'ACT', test_optional: 'Test-optional', not_taken_yet: "Haven't taken yet",
-};
-const SAT_LABEL: Record<string, string> = {
-  sat_1500_1600: '1500–1600', sat_1400_1490: '1400–1490', sat_1300_1390: '1300–1390',
-  sat_1200_1290: '1200–1290', sat_below_1200: 'Below 1200',
-};
-const ACT_LABEL: Record<string, string> = {
-  act_34_36: '34–36', act_31_33: '31–33', act_28_30: '28–30',
-  act_24_27: '24–27', act_below_24: 'Below 24',
-};
-const LEADERSHIP_LABEL: Record<string, string> = {
-  founded: 'Founded / built something', led_established: 'Led an established organization',
-  officer: 'Officer / coordinator', informal: 'Informal leader', none_yet: 'No formal role yet',
-};
-const IMPACT_LABEL: Record<string, string> = {
-  impact_20_plus: 'Led 20+ people', impact_5_19: 'Led 5–19 people',
-  impact_1_4: 'Led 1–4 people', impact_solo: 'Solo / individual', impact_unsure: 'Not sure / N/A',
-};
-
 // ---------------------------------------------------------------------------
 // The form
 // ---------------------------------------------------------------------------
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
 
 const STEP_TO_KEY: Record<number, StepKey> = {
   1: 'identity',
-  2: 'path',
-  3: 'foundation',
-  4: 'activities',
-  5: 'testing',
-  6: 'leadership',
-  7: 'review',
+  2: 'demographics',
+  3: 'path',
+  4: 'foundation',
+  5: 'activities',
+  6: 'testing',
+  7: 'leadership',
+  8: 'review',
 };
 
 export default function AuditPage() {
@@ -306,6 +344,14 @@ export default function AuditPage() {
     leadershipScope: null,
     impactScope: null,
     hasMeasurableOutcome: false,
+    schoolType: null,
+    regionType: null,
+    stateOrCountry: '',
+    firstGenStatus: null,
+    incomeBand: 'prefer_not_say',
+    needsFinancialAid: false,
+    hasInSchoolActivities: false,
+    hasOutOfSchoolActivities: false,
   });
 
   const update = <K extends keyof FullProfileInput>(key: K, value: FullProfileInput[K]) =>
@@ -315,20 +361,23 @@ export default function AuditPage() {
     setProfile((p) => ({ ...p, ...updates }));
 
   const canAdvance = (() => {
-    if (step === 1) return profile.careerGoal !== null && profile.pathConfidence !== null;
-    if (step === 2) return profile.path !== null;
-    if (step === 3) return profile.gpaBucket !== null && profile.gradeLevel !== null;
-    if (step === 4) {
-      const noActivities = profile.activityCount === 'count_0' || profile.highestTier === 'none_unsure';
-      return profile.highestTier !== null && profile.activityCount !== null && (noActivities || profile.yearsOnTop !== null);
-    }
+    if (step === 1) return profile.careerGoal !== null && (profile.careerGoal === 'exploring' || profile.pathConfidence !== null);
+    if (step === 2) return profile.gradeLevel !== null && profile.schoolType !== null && profile.regionType !== null && profile.stateOrCountry.trim().length > 0;
+    if (step === 3) return profile.path !== null;
+    if (step === 4) return profile.gpaBucket !== null;
     if (step === 5) {
+      const noActivities = profile.activityCount === 'count_0' || profile.highestTier === 'none_unsure';
+      if (noActivities) return profile.highestTier !== null && profile.activityCount !== null;
+      return profile.highestTier !== null && profile.activityCount !== null && profile.yearsOnTop !== null && (profile.hasInSchoolActivities || profile.hasOutOfSchoolActivities);
+    }
+    if (step === 6) {
       if (!profile.testStatus) return false;
       if (profile.testStatus === 'sat') return profile.satBucket !== null;
       if (profile.testStatus === 'act') return profile.actBucket !== null;
+      if (profile.testStatus === 'not_planning') return true;
       return true;
     }
-    if (step === 6) return profile.leadershipScope !== null && profile.impactScope !== null;
+    if (step === 7) return profile.leadershipScope !== null && profile.impactScope !== null;
     return true;
   })();
 
@@ -367,12 +416,13 @@ export default function AuditPage() {
         <div className="step-pill mb-6">STEP {step} OF {TOTAL_STEPS}</div>
 
         {step === 1 && <StepCareerGoal profile={profile} update={update} />}
-        {step === 2 && <StepPath profile={profile} update={update} />}
-        {step === 3 && <StepFoundation profile={profile} update={update} updateBatch={updateBatch} />}
-        {step === 4 && <StepActivities profile={profile} update={update} />}
-        {step === 5 && <StepTesting profile={profile} update={update} />}
-        {step === 6 && <StepLeadership profile={profile} update={update} />}
-        {step === 7 && <StepReview profile={profile} />}
+        {step === 2 && <StepDemographics profile={profile} update={update} />}
+        {step === 3 && <StepPath profile={profile} update={update} />}
+        {step === 4 && <StepFoundation profile={profile} update={update} updateBatch={updateBatch} />}
+        {step === 5 && <StepActivities profile={profile} update={update} />}
+        {step === 6 && <StepTesting profile={profile} update={update} />}
+        {step === 7 && <StepLeadership profile={profile} update={update} />}
+        {step === 8 && <StepReview profile={profile} />}
 
         <div className="mt-12 mb-8">
           <ProgressBar current={step} total={TOTAL_STEPS} />
@@ -381,7 +431,7 @@ export default function AuditPage() {
         <div className="flex items-center justify-between">
           {step > 1 ? (
             <button onClick={() => setStep(step - 1)} className="btn-secondary">
-              ← Back
+              Back
             </button>
           ) : <span />}
           <button
@@ -389,7 +439,7 @@ export default function AuditPage() {
             disabled={!canAdvance}
             className="btn-primary"
           >
-            {step === TOTAL_STEPS ? 'See My Score' : 'Continue'} →
+            {step === TOTAL_STEPS ? 'See My Score' : 'Continue'} &rarr;
           </button>
         </div>
       </main>
@@ -420,7 +470,12 @@ function StepCareerGoal({
             key={g.key}
             className="option-card"
             data-selected={profile.careerGoal === g.key}
-            onClick={() => update('careerGoal', g.key as CareerCluster)}
+            onClick={() => {
+              update('careerGoal', g.key as CareerCluster);
+              if (g.key === 'exploring') {
+                update('pathConfidence', 'just_guessing');
+              }
+            }}
           >
             <h3 className="font-display text-lg mb-2">{g.label}</h3>
             <p className="text-sm text-navy/60">{g.blurb}</p>
@@ -428,44 +483,216 @@ function StepCareerGoal({
         ))}
       </div>
 
-      <div className="border-t border-navy/10 pt-10 mb-10">
-        <h3 className="font-display text-xl mb-2">
-          How committed are you to this direction?
-        </h3>
-        <p className="text-navy/60 text-sm mb-6">
-          This helps us calibrate how specifically to benchmark your profile.
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          {PATH_CONFIDENCE_OPTIONS.map((c) => (
-            <button
-              key={c.key}
-              onClick={() => update('pathConfidence', c.key as PathConfidence)}
-              className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all text-left ${
-                profile.pathConfidence === c.key
-                  ? 'bg-navy text-white border-navy'
-                  : 'bg-white text-navy border-navy/10 hover:border-navy/30'
-              }`}
-            >
-              <div className="font-semibold">{c.label}</div>
-              <div className={`text-xs mt-0.5 ${profile.pathConfidence === c.key ? 'text-white/70' : 'text-navy/50'}`}>{c.sub}</div>
-            </button>
-          ))}
+      {profile.careerGoal !== null && profile.careerGoal !== 'exploring' && (
+        <div className="border-t border-navy/10 pt-10 mb-10">
+          <h3 className="font-display text-xl mb-2">
+            How committed are you to this direction?
+          </h3>
+          <p className="text-navy/60 text-sm mb-6">
+            This helps us calibrate how specifically to benchmark your profile.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {PATH_CONFIDENCE_OPTIONS.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => update('pathConfidence', c.key as PathConfidence)}
+                className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all text-left ${
+                  profile.pathConfidence === c.key
+                    ? 'bg-navy text-white border-navy'
+                    : 'bg-white text-navy border-navy/10 hover:border-navy/30'
+                }`}
+              >
+                <div className="font-semibold">{c.label}</div>
+                <div className={`text-xs mt-0.5 ${profile.pathConfidence === c.key ? 'text-white/70' : 'text-navy/50'}`}>{c.sub}</div>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {profile.careerGoal === 'exploring' && (
+        <div className="border-t border-navy/10 pt-10 mb-10">
+          <p className="text-navy/60 italic">
+            We'll treat exploration itself as your priority. Your results will focus on finding direction, not chasing a specific bar.
+          </p>
+        </div>
+      )}
 
       <div>
         <label className="text-xs tracking-wider uppercase text-navy/60 block mb-2">
-          Do you have a specific major in mind? <span className="normal-case">(Optional)</span>
+          Specific direction, path, or major in mind? <span className="normal-case">(Optional)</span>
         </label>
         <input
           type="text"
           value={profile.intendedMajor}
           onChange={(e) => update('intendedMajor', e.target.value)}
-          placeholder="e.g., Biomedical Engineering, Game Design, Welding"
+          placeholder="e.g., Biomedical Engineering, Welding, Real Estate, Cosmetology"
           className="w-full border-b-2 border-navy/15 focus:border-navy outline-none py-2 text-base bg-transparent"
         />
         <p className="text-xs text-navy/50 italic mt-2">
-          We won't score against this yet, but it helps us understand where you're heading.
+          Helps us tailor advice. Works for college majors, trade specialties, or service certifications.
+        </p>
+      </div>
+    </>
+  );
+}
+
+function StepDemographics({
+  profile, update,
+}: { profile: FullProfileInput; update: <K extends keyof FullProfileInput>(k: K, v: FullProfileInput[K]) => void }) {
+  const GRADE_CARDS = [
+    { key: 'freshman' as GradeLevel,  label: 'Freshman',  sub: 'Year 1 (Grade 9)' },
+    { key: 'sophomore' as GradeLevel, label: 'Sophomore', sub: 'Year 2 (Grade 10)' },
+    { key: 'junior' as GradeLevel,    label: 'Junior',    sub: 'Year 3 (Grade 11)' },
+    { key: 'senior' as GradeLevel,    label: 'Senior',    sub: 'Year 4 (Grade 12)' },
+  ];
+
+  return (
+    <>
+      <h1 className="font-display text-4xl md:text-5xl mb-4">About You</h1>
+      <p className="text-navy/60 max-w-xl mb-10">
+        Admissions reads your profile in context. This helps us measure you against the right baseline.
+      </p>
+
+      {/* Section 1: School */}
+      <div className="mb-10">
+        <h3 className="font-display text-xl mb-6">Where are you in school?</h3>
+
+        <label className="text-xs tracking-wider uppercase text-navy/60 block mb-3">
+          Grade Level
+        </label>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+          {GRADE_CARDS.map((g) => (
+            <button
+              key={g.key}
+              onClick={() => update('gradeLevel', g.key)}
+              className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all text-left ${
+                profile.gradeLevel === g.key
+                  ? 'bg-navy text-white border-navy'
+                  : 'bg-white text-navy border-navy/10 hover:border-navy/30'
+              }`}
+            >
+              <div className="font-semibold">{g.label}</div>
+              <div className={`text-xs mt-0.5 ${profile.gradeLevel === g.key ? 'text-white/70' : 'text-navy/50'}`}>{g.sub}</div>
+            </button>
+          ))}
+        </div>
+
+        <label className="text-xs tracking-wider uppercase text-navy/60 block mb-3">
+          School Type
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          {SCHOOL_TYPES.map((s, idx) => (
+            <button
+              key={`${s.key}-${idx}`}
+              onClick={() => update('schoolType', s.key)}
+              className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all text-left ${
+                profile.schoolType === s.key && profile.schoolType !== null
+                  ? 'bg-navy text-white border-navy'
+                  : 'bg-white text-navy border-navy/10 hover:border-navy/30'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Section 2: Location */}
+      <div className="mb-10">
+        <h3 className="font-display text-xl mb-6">Where do you live?</h3>
+
+        <label className="text-xs tracking-wider uppercase text-navy/60 block mb-2">
+          State or Country
+        </label>
+        <input
+          type="text"
+          value={profile.stateOrCountry}
+          onChange={(e) => update('stateOrCountry', e.target.value)}
+          placeholder="e.g., Massachusetts, or Ontario, Canada"
+          className="w-full border-b-2 border-navy/15 focus:border-navy outline-none py-2 text-base bg-transparent mb-2"
+        />
+        <p className="text-xs text-navy/50 italic mb-6">
+          Geographic context affects admissions, especially for state schools and underrepresented regions.
+        </p>
+
+        <label className="text-xs tracking-wider uppercase text-navy/60 block mb-3">
+          Area Type
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          {REGION_TYPES.map((r) => (
+            <button
+              key={r.key}
+              onClick={() => update('regionType', r.key)}
+              className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all ${
+                profile.regionType === r.key
+                  ? 'bg-navy text-white border-navy'
+                  : 'bg-white text-navy border-navy/10 hover:border-navy/30'
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Section 3: Background (optional) */}
+      <div className="mb-10">
+        <h3 className="font-display text-xl mb-1">Background <span className="text-navy/40 font-normal text-base">(optional)</span></h3>
+        <p className="text-navy/60 text-sm mb-6">This context shapes what admissions considers when reviewing your record.</p>
+
+        <label className="text-xs tracking-wider uppercase text-navy/60 block mb-3">
+          First-Generation College Student
+        </label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+          {[
+            { key: 'first_gen' as FirstGenStatus,     label: 'Yes, first-gen',    sub: 'Neither parent completed a 4-year degree' },
+            { key: 'not_first_gen' as FirstGenStatus, label: 'No',                sub: 'At least one parent has a 4-year degree' },
+            { key: 'prefer_not_say' as FirstGenStatus, label: 'Prefer not to say', sub: '' },
+          ].map((o) => (
+            <button
+              key={o.key}
+              onClick={() => update('firstGenStatus', o.key)}
+              className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all text-left ${
+                profile.firstGenStatus === o.key
+                  ? 'bg-navy text-white border-navy'
+                  : 'bg-white text-navy border-navy/10 hover:border-navy/30'
+              }`}
+            >
+              <div className="font-semibold">{o.label}</div>
+              {o.sub && (
+                <div className={`text-xs mt-0.5 ${profile.firstGenStatus === o.key ? 'text-white/70' : 'text-navy/50'}`}>{o.sub}</div>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <label className="flex items-center gap-3 cursor-pointer mb-6">
+          <input
+            type="checkbox"
+            checked={profile.needsFinancialAid}
+            onChange={(e) => update('needsFinancialAid', e.target.checked)}
+            className="w-5 h-5 accent-navy"
+          />
+          <span className="text-sm font-medium">Yes, financial aid will be important to me</span>
+        </label>
+
+        <label className="text-xs tracking-wider uppercase text-navy/60 block mb-2">
+          Household Income Band
+        </label>
+        <select
+          value={profile.incomeBand}
+          onChange={(e) => update('incomeBand', e.target.value as IncomeBand)}
+          className="w-full border-b-2 border-navy/15 focus:border-navy outline-none py-2 mb-2 text-base bg-transparent"
+        >
+          <option value="prefer_not_say">Prefer not to say</option>
+          <option value="income_lt_50k">Under $50,000</option>
+          <option value="income_50_100k">$50,000 – $100,000</option>
+          <option value="income_100_200k">$100,000 – $200,000</option>
+          <option value="income_gt_200k">Over $200,000</option>
+        </select>
+        <p className="text-xs text-navy/50 italic">
+          Used to surface scholarships and need-based opportunities. Never shared.
         </p>
       </div>
     </>
@@ -530,7 +757,6 @@ function StepFoundation({
     } else {
       const existing = profile.apExams.find(e => e.subject === course);
       if (existing) {
-        // clicking the active score again clears it (toggle off = no exam)
         if (existing.score === score) {
           update('apExams', profile.apExams.filter(e => e.subject !== course));
         } else {
@@ -550,14 +776,24 @@ function StepFoundation({
     ));
   };
 
+  if (!profile.gradeLevel) {
+    return (
+      <>
+        <h1 className="font-display text-4xl md:text-5xl mb-4">Academic Foundation</h1>
+        <div className="card max-w-xl mt-8 text-center py-10">
+          <p className="text-navy/60">Please go back to the Demographics step and select your grade level before continuing.</p>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <h1 className="font-display text-4xl md:text-5xl mb-4">
         Academic Foundation
       </h1>
       <p className="text-navy/60 max-w-xl mb-10">
-        Your academic history provides the bedrock for your profile. Accurate
-        data ensures we map your potential against the right institutional standards.
+        Your academic history is the core of your profile. Accurate data ensures we map your potential against the right standards.
       </p>
 
       <div className="card max-w-3xl">
@@ -690,7 +926,7 @@ function StepFoundation({
           )}
         </div>
 
-        {/* IB exams (only if IB diploma candidate — checkbox is below) */}
+        {/* IB exams */}
         <label className="text-xs tracking-wider uppercase text-navy/60 block mb-2">
           How many AP/IB courses does your school offer?
         </label>
@@ -701,20 +937,6 @@ function StepFoundation({
         >
           {OFFERINGS_OPTIONS.map((o) => (
             <option key={o.key} value={o.key}>{o.label}</option>
-          ))}
-        </select>
-
-        <label className="text-xs tracking-wider uppercase text-navy/60 block mb-2">
-          Current Grade Level
-        </label>
-        <select
-          value={profile.gradeLevel ?? ''}
-          onChange={(e) => update('gradeLevel', (e.target.value || null) as GradeLevel | null)}
-          className="w-full border-b-2 border-navy/15 focus:border-navy outline-none py-2 mb-6 text-lg bg-transparent"
-        >
-          <option value="">Select...</option>
-          {GRADES.map((g) => (
-            <option key={g.key} value={g.key}>{g.label}</option>
           ))}
         </select>
 
@@ -746,7 +968,7 @@ function StepFoundation({
                       <option value="pending">Pending</option>
                     </select>
                     <button onClick={() => update('ibExams', profile.ibExams.filter(ex => ex.id !== exam.id))}
-                      className="text-navy/30 hover:text-navy/70 text-lg leading-none px-1">×</button>
+                      className="text-navy/30 hover:text-navy/70 text-lg leading-none px-1">x</button>
                   </div>
                 ))}
               </div>
@@ -764,66 +986,6 @@ function StepFoundation({
               className="w-5 h-5 accent-navy" />
             <span>I have a CTE credential / pathway</span>
           </label>
-        </div>
-      </div>
-    </>
-  );
-}
-
-function StepReview({ profile }: { profile: FullProfileInput }) {
-  const noActivities = profile.activityCount === 'count_0' || profile.highestTier === 'none_unsure';
-  return (
-    <>
-      <h1 className="font-display text-4xl md:text-5xl mb-4">
-        Ready to see your score?
-      </h1>
-      <p className="text-navy/60 max-w-xl mb-10">
-        Review what you've entered below. Go back to make any changes before we calculate your score.
-      </p>
-      <div className="card max-w-2xl text-sm">
-        <p className="text-xs tracking-wider uppercase text-navy/40 font-semibold mb-4">Academic Profile</p>
-        <div className="space-y-3 mb-6">
-          <Row label="Career goal"          value={profile.careerGoal ? CAREER_GOAL_LABEL[profile.careerGoal] : '—'} />
-          <Row label="Path confidence"      value={profile.pathConfidence ? PATH_CONFIDENCE_LABEL[profile.pathConfidence] : '—'} />
-          <Row label="Intended major"       value={profile.intendedMajor.trim() || 'Not specified'} />
-          <Row label="Academic path"        value={profile.path ? PATH_LABEL[profile.path] : '—'} />
-          <Row label="Current grade"        value={profile.gradeLevel ? GRADE_LABEL[profile.gradeLevel] : '—'} />
-          <Row label="GPA range"            value={profile.gpaBucket ? GPA_LABEL[profile.gpaBucket] : '—'} />
-          <Row label="AP courses at school" value={`${profile.apCoursesAtSchool} course${profile.apCoursesAtSchool !== 1 ? 's' : ''}`} />
-          <Row label="AP exams recorded"    value={`${profile.apExams.length} exam${profile.apExams.length !== 1 ? 's' : ''}`} />
-          <Row label="School's AP/IB offerings" value={OFFERINGS_LABEL[profile.courseOfferings]} />
-          {profile.isIbDiplomaCandidate && <Row label="IB Diploma candidate" value="Yes" />}
-          {profile.hasCteCredential && <Row label="CTE pathway" value="Yes" />}
-        </div>
-
-        <p className="text-xs tracking-wider uppercase text-navy/40 font-semibold mb-4 pt-4 border-t border-navy/5">Activities</p>
-        <div className="space-y-3 mb-6">
-          <Row label="Most distinguished activity" value={profile.highestTier ? TIER_LABEL[profile.highestTier] : '—'} />
-          <Row label="Number of activities"        value={profile.activityCount ? `${COUNT_LABEL[profile.activityCount]} activities` : '—'} />
-          {!noActivities && profile.yearsOnTop && (
-            <Row label="Years in top activity" value={YEARS_LABEL[profile.yearsOnTop]} />
-          )}
-          {profile.activityTheme.trim() && (
-            <Row label="Activity theme" value={profile.activityTheme} />
-          )}
-        </div>
-
-        <p className="text-xs tracking-wider uppercase text-navy/40 font-semibold mb-4 pt-4 border-t border-navy/5">Testing</p>
-        <div className="space-y-3 mb-6">
-          <Row label="Testing status" value={profile.testStatus ? TEST_STATUS_LABEL[profile.testStatus] : '—'} />
-          {profile.testStatus === 'sat' && profile.satBucket && (
-            <Row label="SAT score range" value={SAT_LABEL[profile.satBucket]} />
-          )}
-          {profile.testStatus === 'act' && profile.actBucket && (
-            <Row label="ACT score range" value={ACT_LABEL[profile.actBucket]} />
-          )}
-        </div>
-
-        <p className="text-xs tracking-wider uppercase text-navy/40 font-semibold mb-4 pt-4 border-t border-navy/5">Leadership</p>
-        <div className="space-y-3">
-          <Row label="Highest leadership role" value={profile.leadershipScope ? LEADERSHIP_LABEL[profile.leadershipScope] : '—'} />
-          <Row label="Impact scope"            value={profile.impactScope ? IMPACT_LABEL[profile.impactScope] : '—'} />
-          {profile.hasMeasurableOutcome && <Row label="Measurable outcome" value="Yes" />}
         </div>
       </div>
     </>
@@ -866,6 +1028,61 @@ function StepActivities({
           Admissions officers assess activities by level of distinction. Your highest achievement sets the ceiling for this score.
         </p>
       </div>
+
+      {/* Scope question — where does involvement happen */}
+      {!noActivities && (
+        <div className="mb-10">
+          <h3 className="font-display text-xl mb-2">
+            Where does most of your involvement happen?
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            {[
+              {
+                label: 'Mostly inside school',
+                sub: 'Clubs, teams, student government, school publications',
+                inSchool: true,
+                outOfSchool: false,
+              },
+              {
+                label: 'Mostly outside school',
+                sub: 'Job, volunteering, business, independent project, community org',
+                inSchool: false,
+                outOfSchool: true,
+              },
+              {
+                label: 'Both, roughly evenly',
+                sub: 'Active in school AND in something outside',
+                inSchool: true,
+                outOfSchool: true,
+              },
+            ].map((opt) => {
+              const isSelected =
+                profile.hasInSchoolActivities === opt.inSchool &&
+                profile.hasOutOfSchoolActivities === opt.outOfSchool;
+              return (
+                <button
+                  key={opt.label}
+                  onClick={() => {
+                    update('hasInSchoolActivities', opt.inSchool);
+                    update('hasOutOfSchoolActivities', opt.outOfSchool);
+                  }}
+                  className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all text-left ${
+                    isSelected
+                      ? 'bg-navy text-white border-navy'
+                      : 'bg-white text-navy border-navy/10 hover:border-navy/30'
+                  }`}
+                >
+                  <div className="font-semibold">{opt.label}</div>
+                  <div className={`text-xs mt-0.5 ${isSelected ? 'text-white/70' : 'text-navy/50'}`}>{opt.sub}</div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-navy/50 italic">
+            Admissions reads outside-school commitments differently. A job or self-started project signals initiative that clubs don't.
+          </p>
+        </div>
+      )}
 
       <div className="mb-10">
         <h3 className="font-display text-xl mb-2">
@@ -942,22 +1159,26 @@ function StepActivities({
 function StepTesting({
   profile, update,
 }: { profile: FullProfileInput; update: <K extends keyof FullProfileInput>(k: K, v: FullProfileInput[K]) => void }) {
+  const isTradeCareer = profile.path === 'trade_career';
+  const statusList = isTradeCareer ? TRADE_TEST_STATUSES : TEST_STATUSES;
+
   return (
     <>
       <h1 className="font-display text-4xl md:text-5xl mb-4">
-        Standardized Testing
+        {isTradeCareer ? 'Credentials & Testing' : 'Standardized Testing'}
       </h1>
       <p className="text-navy/60 max-w-xl mb-10">
-        Test scores remain one of the clearest signals admissions officers use
-        to compare candidates. Tell us where you stand.
+        {isTradeCareer
+          ? 'For vocational and trade paths, certifications matter more than the SAT. Tell us where you stand.'
+          : 'Test scores remain one of the clearest signals admissions officers use to compare candidates. Tell us where you stand.'}
       </p>
 
       <div className="mb-10">
-        <h3 className="font-display text-xl mb-4">What's your testing status?</h3>
+        <h3 className="font-display text-xl mb-4">What&apos;s your testing status?</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-          {TEST_STATUSES.map((t) => (
+          {statusList.map((t) => (
             <div
-              key={t.key}
+              key={`${t.key}-${t.label}`}
               className="option-card"
               data-selected={profile.testStatus === t.key}
               onClick={() => update('testStatus', t.key)}
@@ -969,7 +1190,7 @@ function StepTesting({
         </div>
       </div>
 
-      {profile.testStatus === 'sat' && (
+      {profile.testStatus === 'sat' && !isTradeCareer && (
         <div className="mb-10">
           <h3 className="font-display text-xl mb-4">What's your SAT score range?</h3>
           <div className="grid grid-cols-2 gap-3">
@@ -1005,6 +1226,77 @@ function StepTesting({
                 }`}
               >
                 {b.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Trade career + test_optional maps to SAT/ACT selectors */}
+      {isTradeCareer && profile.testStatus === 'test_optional' && (
+        <div className="mb-10">
+          <h3 className="font-display text-xl mb-2">What score did you get?</h3>
+          <p className="text-navy/60 text-sm mb-4">Select your test type and score range.</p>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {SAT_BUCKETS.map((b) => (
+              <button
+                key={b.key}
+                onClick={() => update('satBucket', b.key)}
+                className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all ${
+                  profile.satBucket === b.key
+                    ? 'bg-navy text-white border-navy'
+                    : 'bg-white text-navy border-navy/10 hover:border-navy/30'
+                }`}
+              >
+                SAT {b.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Test-optional with optional score input */}
+      {!isTradeCareer && profile.testStatus === 'test_optional' && (
+        <div className="mb-10 opacity-80">
+          <h3 className="font-display text-xl mb-2">
+            Took the test but undecided? <span className="text-navy/40 font-normal text-base">(Optional)</span>
+          </h3>
+          <p className="text-navy/60 text-sm mb-4">
+            Tell us your score and we'll advise whether submitting helps you.
+          </p>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {SAT_BUCKETS.map((b) => (
+              <button
+                key={b.key}
+                onClick={() => {
+                  update('satBucket', profile.satBucket === b.key ? null : b.key);
+                  update('actBucket', null);
+                }}
+                className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all ${
+                  profile.satBucket === b.key
+                    ? 'bg-navy/70 text-white border-navy/70'
+                    : 'bg-white text-navy/70 border-navy/10 hover:border-navy/20'
+                }`}
+              >
+                SAT {b.label}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {ACT_BUCKETS.map((b) => (
+              <button
+                key={b.key}
+                onClick={() => {
+                  update('actBucket', profile.actBucket === b.key ? null : b.key);
+                  update('satBucket', null);
+                }}
+                className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all ${
+                  profile.actBucket === b.key
+                    ? 'bg-navy/70 text-white border-navy/70'
+                    : 'bg-white text-navy/70 border-navy/10 hover:border-navy/20'
+                }`}
+              >
+                ACT {b.label}
               </button>
             ))}
           </div>
@@ -1087,6 +1379,96 @@ function StepLeadership({
         Why we ask: Admissions distinguish between holding a title and creating
         real impact. Both inputs sharpen this score.
       </p>
+    </>
+  );
+}
+
+function StepReview({ profile }: { profile: FullProfileInput }) {
+  const noActivities = profile.activityCount === 'count_0' || profile.highestTier === 'none_unsure';
+  return (
+    <>
+      <h1 className="font-display text-4xl md:text-5xl mb-4">
+        Ready to see your score?
+      </h1>
+      <p className="text-navy/60 max-w-xl mb-10">
+        Review what you've entered below. Go back to make any changes before we calculate your score.
+      </p>
+      <div className="card max-w-2xl text-sm">
+
+        <p className="text-xs tracking-wider uppercase text-navy/40 font-semibold mb-4">Identity</p>
+        <div className="space-y-3 mb-6">
+          <Row label="Career goal"     value={profile.careerGoal ? CAREER_GOAL_LABEL[profile.careerGoal] : 'Not set'} />
+          <Row label="Path confidence" value={profile.pathConfidence ? PATH_CONFIDENCE_LABEL[profile.pathConfidence] : 'Not set'} />
+          <Row label="Intended major"  value={profile.intendedMajor.trim() || 'Not specified'} />
+        </div>
+
+        <p className="text-xs tracking-wider uppercase text-navy/40 font-semibold mb-4 pt-4 border-t border-navy/5">Demographics</p>
+        <div className="space-y-3 mb-6">
+          <Row label="Grade level"    value={profile.gradeLevel ? GRADE_LABEL[profile.gradeLevel] : 'Not set'} />
+          <Row label="School type"    value={profile.schoolType ? SCHOOL_TYPE_LABEL[profile.schoolType] : 'Not set'} />
+          <Row label="State / Country" value={profile.stateOrCountry.trim() || 'Not set'} />
+          <Row label="Area type"      value={profile.regionType ? REGION_LABEL[profile.regionType] : 'Not set'} />
+          {profile.firstGenStatus && profile.firstGenStatus !== 'prefer_not_say' && (
+            <Row label="First-gen status" value={FIRST_GEN_LABEL[profile.firstGenStatus]} />
+          )}
+          {profile.needsFinancialAid && <Row label="Financial aid" value="Important to me" />}
+        </div>
+
+        <p className="text-xs tracking-wider uppercase text-navy/40 font-semibold mb-4 pt-4 border-t border-navy/5">Academic Profile</p>
+        <div className="space-y-3 mb-6">
+          <Row label="Academic path"        value={profile.path ? PATH_LABEL[profile.path] : 'Not set'} />
+          <Row label="GPA range"            value={profile.gpaBucket ? GPA_LABEL[profile.gpaBucket] : 'Not set'} />
+          <Row label="AP courses at school" value={`${profile.apCoursesAtSchool} course${profile.apCoursesAtSchool !== 1 ? 's' : ''}`} />
+          <Row label="AP exams recorded"    value={`${profile.apExams.length} exam${profile.apExams.length !== 1 ? 's' : ''}`} />
+          <Row label="School's AP/IB offerings" value={OFFERINGS_LABEL[profile.courseOfferings]} />
+          {profile.isIbDiplomaCandidate && <Row label="IB Diploma candidate" value="Yes" />}
+          {profile.hasCteCredential && <Row label="CTE pathway" value="Yes" />}
+        </div>
+
+        <p className="text-xs tracking-wider uppercase text-navy/40 font-semibold mb-4 pt-4 border-t border-navy/5">Activities</p>
+        <div className="space-y-3 mb-6">
+          <Row label="Most distinguished activity" value={profile.highestTier ? TIER_LABEL[profile.highestTier] : 'Not set'} />
+          <Row label="Number of activities"        value={profile.activityCount ? `${COUNT_LABEL[profile.activityCount]} activities` : 'Not set'} />
+          {!noActivities && profile.yearsOnTop && (
+            <Row label="Years in top activity" value={YEARS_LABEL[profile.yearsOnTop]} />
+          )}
+          {!noActivities && (
+            <Row
+              label="Activity scope"
+              value={
+                profile.hasInSchoolActivities && profile.hasOutOfSchoolActivities
+                  ? 'Both in-school and outside school'
+                  : profile.hasInSchoolActivities
+                  ? 'Mostly in school'
+                  : profile.hasOutOfSchoolActivities
+                  ? 'Mostly outside school'
+                  : 'Not set'
+              }
+            />
+          )}
+          {profile.activityTheme.trim() && (
+            <Row label="Activity theme" value={profile.activityTheme} />
+          )}
+        </div>
+
+        <p className="text-xs tracking-wider uppercase text-navy/40 font-semibold mb-4 pt-4 border-t border-navy/5">Testing</p>
+        <div className="space-y-3 mb-6">
+          <Row label="Testing status" value={profile.testStatus ? TEST_STATUS_LABEL[profile.testStatus] : 'Not set'} />
+          {profile.testStatus === 'sat' && profile.satBucket && (
+            <Row label="SAT score range" value={SAT_LABEL[profile.satBucket]} />
+          )}
+          {profile.testStatus === 'act' && profile.actBucket && (
+            <Row label="ACT score range" value={ACT_LABEL[profile.actBucket]} />
+          )}
+        </div>
+
+        <p className="text-xs tracking-wider uppercase text-navy/40 font-semibold mb-4 pt-4 border-t border-navy/5">Leadership</p>
+        <div className="space-y-3">
+          <Row label="Highest leadership role" value={profile.leadershipScope ? LEADERSHIP_LABEL[profile.leadershipScope] : 'Not set'} />
+          <Row label="Impact scope"            value={profile.impactScope ? IMPACT_LABEL[profile.impactScope] : 'Not set'} />
+          {profile.hasMeasurableOutcome && <Row label="Measurable outcome" value="Yes" />}
+        </div>
+      </div>
     </>
   );
 }

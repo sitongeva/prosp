@@ -8,15 +8,16 @@ import type {
   AcademicsResult, ActivitiesResult, TestingResult, LeadershipResult,
   TestStatus, SatBucket, ActBucket, LeadershipScope, ImpactScope,
   GradeLevel, PathConfidence, ApExamEntry, IbExamEntry,
+  SchoolType, RegionType, FirstGenStatus,
 } from '@/lib/types/scoring';
 
-// ─── helpers ───────────────────────────────────────────────────────────────
+// helpers
 
 function safeJsonParse<T>(str: string | undefined, fallback: T): T {
   try { return str ? JSON.parse(str) : fallback; } catch { return fallback; }
 }
 
-// ─── display label maps ─────────────────────────────────────────────────────
+// display label maps
 
 const GRADE_DISPLAY: Record<GradeLevel, string> = {
   freshman: '9th grader', sophomore: '10th grader',
@@ -82,7 +83,7 @@ const CONFIDENCE_DISPLAY: Record<string, string> = {
   one_of_several: 'one of several options', just_guessing: 'still figuring it out',
 };
 
-// ─── profile snapshot ───────────────────────────────────────────────────────
+// profile snapshot
 
 function buildProfileSummary(
   careerGoal: string | null,
@@ -111,29 +112,29 @@ function buildProfileSummary(
   let snapshot = `You're a ${grade} targeting ${pathLabel} schools${careerNote}${confidenceNote}, with a ${gpa} GPA. `;
 
   if (overall >= 80) {
-    snapshot += `Your overall profile is strong — ${strongest.label} (${strongest.score}/100) is your sharpest credential, and ${weakest.label} (${weakest.score}/100) is where focused effort would have the most leverage.`;
+    snapshot += `Your overall profile is strong. ${strongest.label} (${strongest.score}/100) is your sharpest credential, and ${weakest.label} (${weakest.score}/100) is where focused effort would have the most impact.`;
   } else if (overall >= 60) {
     snapshot += `Your profile has a real anchor in ${strongest.label} (${strongest.score}/100), but ${weakest.label} (${weakest.score}/100) is a visible gap that admissions will notice when comparing you to other applicants.`;
   } else {
-    snapshot += `You're in the early stages of building a competitive profile. ${strongest.label} (${strongest.score}/100) is your strongest foothold right now — build out from there.`;
+    snapshot += `You're in the early stages of building a competitive profile. ${strongest.label} (${strongest.score}/100) is your strongest foothold right now. Build out from there.`;
   }
 
   let positioning = '';
   const gap = strongest.score - weakest.score;
   if (gap >= 40) {
-    positioning = `Your profile is uneven: strong ${strongest.label.toLowerCase()}, underdeveloped ${weakest.label.toLowerCase()}. Closing that gap is the highest-ROI use of your time — an uneven profile leaves points on the table that a more balanced one would capture.`;
+    positioning = `Your profile is uneven: strong ${strongest.label.toLowerCase()}, underdeveloped ${weakest.label.toLowerCase()}. Closing that gap is the highest-return use of your time. An uneven profile leaves points on the table that a more balanced one would capture.`;
   } else if (overall >= 80) {
-    positioning = `Your profile is well-rounded. The play now isn't to plug gaps — it's to deepen your ${strongest.label.toLowerCase()} story so it becomes genuinely hard to overlook.`;
+    positioning = `Your profile is well-rounded. The move now is to deepen your ${strongest.label.toLowerCase()} story so it becomes genuinely hard to overlook.`;
   } else if (overall >= 60) {
-    positioning = `To move from competitive to compelling, focus first on ${weakest.label.toLowerCase()} — that category has the most room to shift your overall standing.`;
+    positioning = `To move from competitive to compelling, focus first on ${weakest.label.toLowerCase()}. That category has the most room to shift your overall standing.`;
   } else {
-    positioning = `Every area can grow from here. Start with ${weakest.label.toLowerCase()} — even modest gains there will compound as the rest of your profile develops.`;
+    positioning = `Every area can grow from here. Start with ${weakest.label.toLowerCase()}. Even modest gains there will compound as the rest of your profile develops.`;
   }
 
   return { snapshot, positioning };
 }
 
-// ─── per-category insight functions ─────────────────────────────────────────
+// per-category insight functions
 
 function academicsInsight(
   path: AcademicPath,
@@ -151,10 +152,10 @@ function academicsInsight(
 
   // GPA
   if (result.gpaSubScore >= 90) {
-    points.push(`Your ${gpa} GPA is in the top range for ${pathLabel} schools — this is the foundation everything else builds on.`);
+    points.push(`Your ${gpa} GPA is in the top range for ${pathLabel} schools. This is the foundation everything else builds on.`);
   } else if (result.gpaSubScore >= 70) {
     const target = path === 'competitive' ? '3.8+' : path === 'selective' ? '3.7+' : '3.5+';
-    points.push(`Your ${gpa} GPA is solid, but ${pathLabel} schools typically favor ${target}. As a ${grade}, there's still time to move this — prioritize it.`);
+    points.push(`Your ${gpa} GPA is solid, but ${pathLabel} schools typically favor ${target}. As a ${grade}, there's still time to move this. Prioritize it.`);
   } else {
     points.push(`Your ${gpa} GPA is below the typical bar for ${pathLabel} schools. As a ${grade}, grade recovery is the most important academic move you can make right now.`);
   }
@@ -163,7 +164,7 @@ function academicsInsight(
   if (apCoursesAtSchool > 0) {
     const offerStr = OFFERINGS_DISPLAY[courseOfferings];
     const utilWord = result.rigorUtilizationPct >= 80 ? 'excellent' : result.rigorUtilizationPct >= 40 ? 'good' : 'limited';
-    points.push(`With ${apCoursesAtSchool} AP course${apCoursesAtSchool !== 1 ? 's' : ''} at a school offering ${offerStr}, you're making ${utilWord} use of available rigor — admissions weights this school-adjusted rate, not just the raw count.`);
+    points.push(`With ${apCoursesAtSchool} AP course${apCoursesAtSchool !== 1 ? 's' : ''} at a school offering ${offerStr}, you're making ${utilWord} use of available rigor. Admissions weights this school-adjusted rate, not just the raw count.`);
   } else if (path === 'competitive' || path === 'selective') {
     points.push(`You haven't recorded AP courses yet. As a ${grade} targeting ${pathLabel} schools, adding rigorous coursework is the single highest-leverage academic move available to you.`);
   }
@@ -174,18 +175,23 @@ function academicsInsight(
     const avg = scoredExams.reduce((s, e) => s + e.score, 0) / scoredExams.length;
     const lowCount = scoredExams.filter(e => e.score <= 2).length;
     if (avg >= 4.0) {
-      points.push(`Your AP exam average of ${avg.toFixed(1)} across ${scoredExams.length} exam${scoredExams.length > 1 ? 's' : ''} signals genuine mastery — scores of 4 and 5 are what admissions officers look for, not just course-taking.`);
+      points.push(`Your AP exam average of ${avg.toFixed(1)} across ${scoredExams.length} exam${scoredExams.length > 1 ? 's' : ''} signals genuine mastery. Scores of 4 and 5 are what admissions officers look for, not just course-taking.`);
     } else if (lowCount > 0 && lowCount >= scoredExams.length / 2) {
       points.push(`Several of your AP exams scored 1–2, which limits the signal value of your course load. Stronger performance on upcoming exams would substantially improve this part of your profile.`);
     } else {
-      points.push(`Your AP exam scores are mixed. Identifying the exams where you can score 4–5 — and prepping specifically for those — would sharpen the academic story your transcript tells.`);
+      points.push(`Your AP exam scores are mixed. Identifying the exams where you can score 4–5 and prepping specifically for those would sharpen the academic story your transcript tells.`);
     }
   }
 
   // Self-study
   if (result.selfStudyBonus > 0) {
     const count = apExams.filter(e => e.selfStudied && (e.score === 4 || e.score === 5)).length;
-    points.push(`You self-studied ${count} AP exam${count > 1 ? 's' : ''} and scored 4 or 5 — this is the kind of intellectual initiative that makes a real impression, especially when called out in your application essays.`);
+    points.push(`You self-studied ${count} AP exam${count > 1 ? 's' : ''} and scored 4 or 5. This is the kind of intellectual initiative that makes a real impression, especially when called out in your application essays.`);
+  }
+
+  // Expectation adjustment note
+  if (result.expectationMultiplier < 1.0) {
+    points.push('We adjusted what we expect from your profile based on your school and background. The bar you are measured against reflects what is realistic from where you started.');
   }
 
   return points;
@@ -203,17 +209,17 @@ function activitiesInsight(
   const pathLabel = { competitive: 'top-tier', selective: 'selective', state_local: 'state', trade_career: 'vocational' }[path];
 
   if (highestTier === 'none_unsure') {
-    points.push(`You haven't established activities yet. For ${pathLabel} schools, activities are how admissions builds a picture of who you are beyond the classroom — starting now matters.`);
+    points.push(`You haven't established activities yet. For ${pathLabel} schools, activities are how admissions builds a picture of who you are beyond the classroom. Starting now matters.`);
   } else {
     const tierDesc = TIER_DISPLAY[highestTier];
     const yearsNote = result.yearsMultiplier >= 1.05 ? ` sustained over ${YEARS_DISPLAY[yearsOnTop]}` : '';
     if (result.baseScore >= 90) {
-      points.push(`Your highest activity is ${tierDesc}${yearsNote} — this is exactly the level of distinction that anchors strong applications at ${pathLabel} schools.`);
+      points.push(`Your highest activity is ${tierDesc}${yearsNote}. This is exactly the level of distinction that anchors strong applications at ${pathLabel} schools.`);
     } else if (result.baseScore >= 60) {
       const nextLevel = highestTier === 'tier_4' ? 'moving into a school leadership role (officer, captain, founder)' : highestTier === 'tier_3' ? 'earning state or regional recognition in your area' : 'reaching national-level recognition';
       points.push(`Your highest activity is at the ${tierDesc} level${yearsNote}. ${nextLevel.charAt(0).toUpperCase() + nextLevel.slice(1)} is the clearest path to a meaningfully higher score.`);
     } else {
-      points.push(`Your current activity level is ${tierDesc}. Building toward a more visible or competitive role — even in the next year — will compound across your whole application.`);
+      points.push(`Your current activity level is ${tierDesc}. Building toward a more visible or competitive role, even in the next year, will compound across your whole application.`);
     }
   }
 
@@ -223,14 +229,14 @@ function activitiesInsight(
   } else if (result.countMultiplier < 1.0) {
     points.push(`With ${COUNT_DISPLAY[activityCount]}, your portfolio is narrower than ${pathLabel} schools typically expect. Adding 1–2 more consistent commitments would close this gap.`);
   } else {
-    points.push(`Your ${COUNT_DISPLAY[activityCount]} shows real breadth — admissions reads this as someone who is genuinely engaged, not just resume-padding.`);
+    points.push(`Your ${COUNT_DISPLAY[activityCount]} shows real breadth. Admissions reads this as someone who is genuinely engaged, not just resume-padding.`);
   }
 
   // Theme / spike
   if (activityTheme && activityTheme.trim()) {
-    points.push(`Your activities connect around "${activityTheme.trim()}" — this thread is a genuine differentiator. Lean into it explicitly in your personal statement and activities list.`);
+    points.push(`Your activities connect around "${activityTheme.trim()}". This thread is a genuine differentiator. Lean into it explicitly in your personal statement and activities list.`);
   } else if (result.spikeBonus === 0 && activityCount !== 'count_0' && activityCount !== 'count_1') {
-    points.push(`Your activities don't yet have a visible connecting thread. Finding one — even a shared role or subject area — transforms a list of activities into a coherent story about you.`);
+    points.push(`Your activities don't yet have a visible connecting thread. Finding one, even a shared role or subject area, transforms a list of activities into a coherent story about you.`);
   }
 
   return points;
@@ -250,17 +256,26 @@ function testingInsight(
     state_local: '1200+ SAT or 26+ ACT', trade_career: 'minimal test emphasis',
   };
 
+  if (testStatus === 'not_planning') {
+    if (path === 'trade_career') {
+      points.push('Your certifications are doing the work standardized tests do elsewhere. Keep stacking them.');
+    } else {
+      points.push(`You're not planning to test. Make sure the rest of your profile compensates at ${pathLabel} schools.`);
+    }
+    return points;
+  }
+
   if (testStatus === 'not_taken_yet') {
     if (path === 'competitive' || path === 'selective') {
-      points.push(`You haven't taken the SAT or ACT yet. For ${pathLabel} schools, the benchmark is ${benchmarks[path]} — putting a test date on the calendar now is one of the most concrete steps you can take.`);
+      points.push(`You haven't taken the SAT or ACT yet. For ${pathLabel} schools, the benchmark is ${benchmarks[path]}. Putting a test date on the calendar now is one of the most concrete steps you can take.`);
     } else {
-      points.push(`You haven't taken the SAT or ACT yet. Even one sitting gives you a data point — most ${pathLabel} schools are test-optional anyway, so you can decide whether to submit once you see your score.`);
+      points.push(`You haven't taken the SAT or ACT yet. Even one sitting gives you a data point. Most ${pathLabel} schools are test-optional anyway, so you can decide whether to submit once you see your score.`);
     }
     return points;
   }
 
   if (testStatus === 'test_optional') {
-    points.push(`You're applying test-optional. Without a test score, your GPA, course rigor, activities, and essays carry proportionally more weight — make sure those are as polished as possible.`);
+    points.push(`You're applying test-optional. Without a test score, your GPA, course rigor, activities, and essays carry proportionally more weight. Make sure those are as polished as possible.`);
     if (path === 'competitive') {
       points.push(`At the most selective schools, a strong score (${benchmarks.competitive}) can still help because it gives admissions something concrete to anchor your candidacy. If you have time, it's worth considering one test attempt.`);
     }
@@ -274,11 +289,11 @@ function testingInsight(
     : 'your score';
 
   if (result.score >= 90) {
-    points.push(`Your ${scoreDesc} is at the top of the range for ${pathLabel} schools — this is a clear asset that strengthens every other part of your application.`);
+    points.push(`Your ${scoreDesc} is at the top of the range for ${pathLabel} schools. This is a clear asset that strengthens every other part of your application.`);
   } else if (result.score >= 70) {
-    points.push(`Your ${scoreDesc} is competitive but below the typical ${pathLabel} bar of ${benchmarks[path]}. A targeted retake — even 50–100 points on the SAT — could move this meaningfully.`);
+    points.push(`Your ${scoreDesc} is competitive but below the typical ${pathLabel} bar of ${benchmarks[path]}. A targeted retake, even 50–100 points on the SAT, could move this meaningfully.`);
   } else {
-    points.push(`Your ${scoreDesc} is below the ${pathLabel} benchmark of ${benchmarks[path]}. Retaking the test with focused prep is one of the highest-ROI actions available to you.`);
+    points.push(`Your ${scoreDesc} is below the ${pathLabel} benchmark of ${benchmarks[path]}. Retaking the test with focused prep is one of the highest-return actions available to you.`);
   }
 
   return points;
@@ -295,21 +310,21 @@ function leadershipInsight(
   const pathLabel = { competitive: 'top-tier', selective: 'selective', state_local: 'state', trade_career: 'vocational' }[path];
 
   if (leadershipScope === 'none_yet') {
-    points.push(`You don't have a formal leadership role yet. For ${pathLabel} schools, leadership signals initiative and the ability to move others. Even one first step — proposing a club, volunteering to lead a project — would change this score.`);
+    points.push(`You don't have a formal leadership role yet. For ${pathLabel} schools, leadership signals initiative and the ability to move others. Even one first step, such as proposing a club or volunteering to lead a project, would change this score.`);
     return points;
   }
 
   const scopeDesc = SCOPE_DISPLAY[leadershipScope];
 
   if (result.baseScore >= 80) {
-    points.push(`Having ${scopeDesc} is a genuine credential — this is the kind of role that makes admissions readers pay attention and ask follow-up questions.`);
+    points.push(`Having ${scopeDesc} is a genuine credential. This is the kind of role that makes admissions readers pay attention and ask follow-up questions.`);
   } else if (result.baseScore >= 50) {
     const upgrade = leadershipScope === 'informal'
       ? 'pursuing a formal title (officer, president, captain)'
       : leadershipScope === 'officer'
       ? 'launching your own initiative or becoming the top leader of your organization'
       : 'expanding the scale or visibility of your leadership';
-    points.push(`You've ${scopeDesc}, which is a real credential. The natural next move — ${upgrade} — would visibly amplify this part of your application.`);
+    points.push(`You've ${scopeDesc}, which is a real credential. The natural next move, ${upgrade}, would visibly amplify this part of your application.`);
   } else {
     points.push(`You've ${scopeDesc}. Building toward a more formal or visible role would make this section of your application much stronger.`);
   }
@@ -319,14 +334,14 @@ function leadershipInsight(
     if (result.scopeMultiplier >= 1.05) {
       points.push(`Demonstrating impact across ${impactDesc} is exactly what separates title-holders from genuine leaders in the admissions read.`);
     } else if (result.scopeMultiplier < 1.0) {
-      points.push(`Your leadership impact has been primarily individual so far. Finding ways to bring others along — even a small team of 2–3 people — would immediately boost the signal your leadership sends.`);
+      points.push(`Your leadership impact has been primarily individual so far. Finding ways to bring others along, even a small team of 2–3 people, would immediately boost the signal your leadership sends.`);
     } else {
-      points.push(`Your impact with ${impactDesc} is a credible start. Scale it up — more people, a broader scope, a budget — and the score follows.`);
+      points.push(`Your impact with ${impactDesc} is a credible start. Scale it up, more people, a broader scope, a budget, and the score follows.`);
     }
   }
 
   if (hasMeasurableOutcome) {
-    points.push(`You have a concrete, measurable result from your leadership. This is uncommon and genuinely persuasive — make it front and center in your essays and activities list, with specific numbers.`);
+    points.push(`You have a concrete, measurable result from your leadership. This is uncommon and genuinely persuasive. Make it front and center in your essays and activities list, with specific numbers.`);
   } else {
     points.push(`You don't have a measurable outcome recorded yet. Before you apply, try to attach a number to your impact: members gained, funds raised, attendance increased. Numbers make leadership claims credible.`);
   }
@@ -334,7 +349,7 @@ function leadershipInsight(
   return points;
 }
 
-// ─── page ───────────────────────────────────────────────────────────────────
+// page
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -342,6 +357,13 @@ interface PageProps {
 
 export default async function ResultsPage({ searchParams: searchParamsPromise }: PageProps) {
   const searchParams = await searchParamsPromise;
+
+  // Demographics
+  const schoolType = (searchParams.schoolType ?? null) as SchoolType | null;
+  const regionType = (searchParams.regionType ?? null) as RegionType | null;
+  const firstGenStatus = (searchParams.firstGenStatus ?? null) as FirstGenStatus | null;
+  const stateOrCountry = searchParams.stateOrCountry ?? '';
+
   // Academics
   const path = (searchParams.path ?? 'selective') as AcademicPath;
   const gpaBucket = (searchParams.gpaBucket ?? 'gpa_3_5_to_3_79') as GpaBucket;
@@ -359,6 +381,8 @@ export default async function ResultsPage({ searchParams: searchParamsPromise }:
   const yearsOnTop = (searchParams.yearsOnTop ?? 'years_1_2') as ActivityYears;
   const hasSpike = searchParams.hasSpike === 'true';
   const activityTheme = searchParams.activityTheme ?? '';
+  const hasInSchoolActivities = searchParams.hasInSchoolActivities === 'true';
+  const hasOutOfSchoolActivities = searchParams.hasOutOfSchoolActivities === 'true';
 
   // Testing
   const testStatus = (searchParams.testStatus ?? 'not_taken_yet') as TestStatus;
@@ -378,8 +402,18 @@ export default async function ResultsPage({ searchParams: searchParamsPromise }:
   const academicsResult = calculateAcademicsScore({
     path, gpaBucket, gradeLevel, apCoursesAtSchool, apExams, ibExams,
     courseOfferings, isIbDiplomaCandidate, hasCteCredential,
+    context: schoolType && regionType ? {
+      schoolType: schoolType as SchoolType,
+      regionType: regionType as RegionType,
+      firstGenStatus: (firstGenStatus ?? 'prefer_not_say') as FirstGenStatus,
+    } : undefined,
   });
-  const activitiesResult = calculateActivitiesScore({ path, highestTier, activityCount, yearsOnTop, hasSpike });
+
+  const activitiesResult = calculateActivitiesScore({
+    path, highestTier, activityCount, yearsOnTop, hasSpike,
+    hasInSchoolActivities,
+    hasOutOfSchoolActivities,
+  });
   const testingResult = calculateTestingScore({ path, testStatus, satBucket, actBucket });
   const leadershipResult = calculateLeadershipScore({ path, leadershipScope, impactScope, hasMeasurableOutcome });
 
@@ -394,6 +428,9 @@ export default async function ResultsPage({ searchParams: searchParamsPromise }:
     careerGoal, gradeLevel, path, gpaBucket, intendedMajor, pathConfidence, scoreSummary,
   );
 
+  // Suppress stateOrCountry lint warning
+  void stateOrCountry;
+
   return (
     <main className="min-h-screen px-6 md:px-12 py-10 md:py-16 max-w-5xl mx-auto">
       <Link href="/" className="font-display font-semibold tracking-tight">
@@ -404,7 +441,7 @@ export default async function ResultsPage({ searchParams: searchParamsPromise }:
         <h1 className="font-display text-5xl md:text-6xl">Your Academic Profile</h1>
       </div>
 
-      {/* Score cards 2×2 */}
+      {/* Score cards 2x2 */}
       <div className="grid grid-cols-2 gap-6 mt-10">
         {scoreSummary.map(({ label, score }, i) => {
           const signal = [
@@ -478,7 +515,7 @@ export default async function ResultsPage({ searchParams: searchParamsPromise }:
           This is your Academics, Activities, Testing, and Leadership scores.
           One more category — Research &amp; Internships — is coming next.
         </p>
-        <Link href="/audit" className="btn-secondary mt-6">← Re-run the audit</Link>
+        <Link href="/audit" className="btn-secondary mt-6">Re-run the audit</Link>
       </div>
     </main>
   );

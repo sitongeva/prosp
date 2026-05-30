@@ -100,6 +100,7 @@ function generateSignal(
   selfStudyBonus: number,
   apExams: ApExamEntry[],
   path: AcademicPath,
+  expectationMultiplier: number,
 ): string {
   const pathLabel = {
     competitive:  'top-tier',
@@ -108,26 +109,31 @@ function generateSignal(
     trade_career: 'vocational',
   }[path];
 
-  if (score >= 90) return `Excellent academic foundation for ${pathLabel} pathways.`;
+  let contextNote = '';
+  if (expectationMultiplier < 1.0) {
+    contextNote = ' We adjusted what we expect from your profile based on your school and background. The bar you are measured against reflects what is realistic from where you started.';
+  }
+
+  if (score >= 90) return `Your academics will hold up at ${pathLabel} schools.${contextNote}`;
 
   if (score >= 75) {
     if (selfStudyBonus > 0)
-      return `Strong academics with the kind of self-directed initiative ${pathLabel} schools notice.`;
-    return `Strong academic profile, well-aligned with ${pathLabel} expectations.`;
+      return `Strong academics with the kind of self-directed initiative ${pathLabel} schools notice.${contextNote}`;
+    return `You're hitting the academic bar ${pathLabel} schools look for.${contextNote}`;
   }
 
   if (score >= 60) {
     if (gpaSubScore >= 80 && rigorMultiplier < 0.95)
-      return `Solid grades, but course rigor may not signal readiness for ${pathLabel} programs.`;
+      return `Your grades are solid, but you'll need a harder schedule to compete at ${pathLabel} schools.${contextNote}`;
     if (gpaSubScore < 70 && rigorMultiplier >= 1.05)
-      return `Ambitious schedule, but grades suggest your rigor may be outpacing your performance.`;
+      return `You're taking on a lot, and your grades are showing the strain. Pick fewer hard classes and ace them.${contextNote}`;
     if (effectiveRigorCount > 0 && apExams.some(e => e.score === 1 || e.score === 2))
-      return 'AP exam performance is limiting the impact of your rigorous schedule.';
-    return `Adequate profile for ${pathLabel} pathways, with room to strengthen.`;
+      return `AP exam performance is limiting the impact of your rigorous schedule.${contextNote}`;
+    return `Adequate profile for ${pathLabel} pathways, with room to strengthen.${contextNote}`;
   }
 
-  if (score >= 40) return `Below the typical bar for ${pathLabel} schools — meaningful improvement needed.`;
-  return `Current academic profile is significantly off-target for ${pathLabel} pathways.`;
+  if (score >= 40) return `You're below the typical bar at ${pathLabel} schools. Real change is needed in your grades or your rigor or both.${contextNote}`;
+  return `Your current academic profile won't get you into ${pathLabel} schools. Either change the target or change the trajectory.${contextNote}`;
 }
 
 export function calculateAcademicsScore(input: AcademicsInput): AcademicsResult {
@@ -154,14 +160,24 @@ export function calculateAcademicsScore(input: AcademicsInput): AcademicsResult 
   const offeringsMidpoint = OFFERINGS_MIDPOINT[input.courseOfferings];
   const gradeAdjustedExpectation = offeringsMidpoint * GRADE_PROGRESS[input.gradeLevel];
 
+  // Context-based expectation multiplier
+  let expectationMultiplier = 1.0;
+  if (input.context) {
+    if (input.context.regionType === 'rural') expectationMultiplier *= 0.85;
+    else if (input.context.regionType === 'small_town') expectationMultiplier *= 0.92;
+    if (input.context.schoolType === 'homeschool') expectationMultiplier *= 0.90;
+    if (input.context.firstGenStatus === 'first_gen') expectationMultiplier *= 0.93;
+  }
+  const adjustedExpectation = gradeAdjustedExpectation * expectationMultiplier;
+
   // Plausibility cap: prevent absurd freshman inputs from breaking the model
-  if (effectiveRigorCount > gradeAdjustedExpectation * 2) {
-    effectiveRigorCount = gradeAdjustedExpectation * 2;
+  if (effectiveRigorCount > adjustedExpectation * 2) {
+    effectiveRigorCount = adjustedExpectation * 2;
   }
 
   const rigorUtilizationPct = Math.min(
     100,
-    Math.round((effectiveRigorCount / Math.max(0.5, gradeAdjustedExpectation)) * 100),
+    Math.round((effectiveRigorCount / Math.max(0.5, adjustedExpectation)) * 100),
   );
 
   let rigorMultiplier = getRigorMultiplier(rigorUtilizationPct, input.path);
@@ -180,6 +196,7 @@ export function calculateAcademicsScore(input: AcademicsInput): AcademicsResult 
   const signal = generateSignal(
     score, gpaSubScore, rigorMultiplier,
     effectiveRigorCount, selfStudyBonus, input.apExams, input.path,
+    expectationMultiplier,
   );
 
   return {
@@ -191,6 +208,7 @@ export function calculateAcademicsScore(input: AcademicsInput): AcademicsResult 
     effectiveRigorCount,
     selfStudyBonus,
     cteBonus,
+    expectationMultiplier,
     signal,
     scoringVersion: '2.0.0',
   };

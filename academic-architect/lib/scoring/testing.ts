@@ -30,6 +30,10 @@ const TEST_OPTIONAL_SCORES: Record<AcademicPath, number> = {
   competitive: 65, selective: 80, state_local: 90, trade_career: 95,
 };
 
+const NOT_PLANNING_SCORES: Record<AcademicPath, number> = {
+  competitive: 30, selective: 55, state_local: 80, trade_career: 95,
+};
+
 const PATH_LABEL: Record<AcademicPath, string> = {
   competitive:  'top-tier',
   selective:    'selective',
@@ -40,10 +44,14 @@ const PATH_LABEL: Record<AcademicPath, string> = {
 function generateSignal(score: number, path: AcademicPath, testStatus: string): string {
   const pathLabel = PATH_LABEL[path];
   if (testStatus === 'not_taken_yet') return 'Take the SAT or ACT to strengthen this part of your profile.';
+  if (testStatus === 'not_planning') {
+    if (path === 'trade_career') return 'Your certifications are doing the work standardized tests do elsewhere. Keep stacking them.';
+    return `You're not planning to test. Make sure the rest of your profile compensates at ${pathLabel} schools.`;
+  }
   if (score >= 90) return `Test scores firmly support ${pathLabel} applications.`;
-  if (score >= 75) return `Strong test scores aligned with ${pathLabel} expectations.`;
-  if (score >= 60) return `Test scores adequate for ${pathLabel}, with room to grow.`;
-  if (score >= 40) return `Test scores below typical ${pathLabel} benchmarks.`;
+  if (score >= 75) return `Test scores are in the range ${pathLabel} schools look for.`;
+  if (score >= 60) return `Test scores are adequate for ${pathLabel}, but there is room to improve.`;
+  if (score >= 40) return `Test scores are below typical ${pathLabel} benchmarks.`;
   return `Current test profile is significantly off-target for ${pathLabel} schools.`;
 }
 
@@ -56,7 +64,18 @@ export function calculateTestingScore(input: TestingInput): TestingResult {
     const satBucket = ACT_TO_SAT[input.actBucket];
     baseScore = SAT_SCORE_TABLE[satBucket][input.path];
   } else if (input.testStatus === 'test_optional') {
-    baseScore = TEST_OPTIONAL_SCORES[input.path];
+    const optionalBase = TEST_OPTIONAL_SCORES[input.path];
+    if (input.satBucket || input.actBucket) {
+      let submitScore: number;
+      if (input.satBucket) submitScore = SAT_SCORE_TABLE[input.satBucket][input.path];
+      else if (input.actBucket) submitScore = SAT_SCORE_TABLE[ACT_TO_SAT[input.actBucket!]][input.path];
+      else submitScore = optionalBase;
+      baseScore = Math.round((submitScore + optionalBase) / 2);
+    } else {
+      baseScore = optionalBase;
+    }
+  } else if (input.testStatus === 'not_planning') {
+    baseScore = NOT_PLANNING_SCORES[input.path];
   } else {
     baseScore = 50;
   }

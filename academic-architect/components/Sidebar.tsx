@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 export type StepKey =
   | 'identity'
+  | 'demographics'
   | 'path'
   | 'foundation'
   | 'activities'
@@ -18,13 +19,14 @@ interface SidebarProps {
 }
 
 const STEPS: { key: StepKey; label: string }[] = [
-  { key: 'identity',   label: 'Identity' },
-  { key: 'path',       label: 'Academic Path' },
-  { key: 'foundation', label: 'Foundation' },
-  { key: 'activities', label: 'Activities' },
-  { key: 'testing',    label: 'Testing' },
-  { key: 'leadership', label: 'Leadership' },
-  { key: 'review',     label: 'Review' },
+  { key: 'identity',     label: 'Identity' },
+  { key: 'demographics', label: 'Demographics' },
+  { key: 'path',         label: 'Academic Path' },
+  { key: 'foundation',   label: 'Foundation' },
+  { key: 'activities',   label: 'Activities' },
+  { key: 'testing',      label: 'Testing' },
+  { key: 'leadership',   label: 'Leadership' },
+  { key: 'review',       label: 'Review' },
 ];
 
 export default function Sidebar({ currentStep, completedSteps, onNavigate }: SidebarProps) {

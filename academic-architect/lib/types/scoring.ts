@@ -76,7 +76,7 @@ export type ActivityYears =
   | 'years_3'
   | 'years_4_plus';
 
-export type TestStatus = 'sat' | 'act' | 'test_optional' | 'not_taken_yet';
+export type TestStatus = 'sat' | 'act' | 'test_optional' | 'not_taken_yet' | 'not_planning';
 
 export type SatBucket =
   | 'sat_1500_1600'
@@ -106,6 +106,17 @@ export type ImpactScope =
   | 'impact_solo'
   | 'impact_unsure';
 
+export type SchoolType = 'public' | 'private' | 'charter' | 'magnet' | 'homeschool' | 'online' | 'boarding' | 'other';
+export type RegionType = 'urban' | 'suburban' | 'rural' | 'small_town';
+export type FirstGenStatus = 'first_gen' | 'not_first_gen' | 'prefer_not_say';
+export type IncomeBand = 'income_lt_50k' | 'income_50_100k' | 'income_100_200k' | 'income_gt_200k' | 'prefer_not_say';
+
+export interface AcademicsContext {
+  schoolType: SchoolType;
+  regionType: RegionType;
+  firstGenStatus: FirstGenStatus;
+}
+
 export interface AcademicsInput {
   path: AcademicPath;
   gpaBucket: GpaBucket;
@@ -116,6 +127,7 @@ export interface AcademicsInput {
   courseOfferings: CourseOfferings;
   isIbDiplomaCandidate: boolean;
   hasCteCredential: boolean;
+  context?: AcademicsContext;
 }
 
 export interface AcademicsResult {
@@ -127,6 +139,7 @@ export interface AcademicsResult {
   effectiveRigorCount: number;
   selfStudyBonus: number;
   cteBonus: number;
+  expectationMultiplier: number;
   signal: string;
   scoringVersion: string;
 }
@@ -137,6 +150,8 @@ export interface ActivitiesInput {
   activityCount: ActivityCount;
   yearsOnTop: ActivityYears;
   hasSpike: boolean;
+  hasInSchoolActivities: boolean;
+  hasOutOfSchoolActivities: boolean;
 }
 
 export interface ActivitiesResult {
@@ -145,6 +160,7 @@ export interface ActivitiesResult {
   countMultiplier: number;
   yearsMultiplier: number;
   spikeBonus: number;
+  balanceBonus: number;
   signal: string;
   scoringVersion: string;
 }
@@ -204,4 +220,12 @@ export interface FullProfileInput {
   leadershipScope: LeadershipScope | null;
   impactScope: ImpactScope | null;
   hasMeasurableOutcome: boolean;
+  schoolType: SchoolType | null;
+  regionType: RegionType | null;
+  stateOrCountry: string;
+  firstGenStatus: FirstGenStatus | null;
+  incomeBand: IncomeBand;
+  needsFinancialAid: boolean;
+  hasInSchoolActivities: boolean;
+  hasOutOfSchoolActivities: boolean;
 }

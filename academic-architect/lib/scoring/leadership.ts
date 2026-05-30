@@ -43,15 +43,15 @@ function generateSignal(
 ): string {
   const pathLabel = PATH_LABEL[path];
   if (score >= 90) return `Standout leadership profile for ${pathLabel} pathways.`;
-  if (score >= 75) return `Strong leadership signal aligned with ${pathLabel} expectations.`;
+  if (score >= 75) return `Strong leadership signal. You're meeting the bar ${pathLabel} schools look for.`;
   if (score >= 60) {
     if (baseScore >= 80 && scopeMultiplier < 1.0)
       return 'Impressive role, but admissions look for leadership at greater scope.';
     if (baseScore < 60 && hasMeasurableOutcome)
       return 'Concrete impact, but consider stepping into a more formal leadership role.';
-    return `Adequate leadership profile for ${pathLabel} pathways, with room to grow.`;
+    return `Adequate leadership profile for ${pathLabel} pathways. There is room to build.`;
   }
-  if (score >= 40) return `Leadership profile below the typical bar for ${pathLabel} schools.`;
+  if (score >= 40) return `Leadership profile is below the typical bar for ${pathLabel} schools.`;
   return `Limited formal leadership footprint for ${pathLabel} pathways.`;
 }
 

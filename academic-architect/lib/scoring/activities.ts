@@ -44,27 +44,32 @@ const PATH_LABEL: Record<AcademicPath, string> = {
   trade_career: 'vocational',
 };
 
+const BALANCE_NOTE = "You're showing up both inside and outside school. That breadth tells admissions you can lead in different environments.";
+
 function generateSignal(
   score: number,
   baseScore: number,
   countMultiplier: number,
   yearsMultiplier: number,
   path: AcademicPath,
+  balanceBonus: number,
 ): string {
   const pathLabel = PATH_LABEL[path];
-  if (score >= 90) return `Standout extracurricular profile for ${pathLabel} pathways.`;
-  if (score >= 75) return `Strong activities profile with the depth ${pathLabel} schools look for.`;
+  const balanceSuffix = balanceBonus > 0 ? ` ${BALANCE_NOTE}` : '';
+
+  if (score >= 90) return `You're doing the kind of things top-tier schools notice.${balanceSuffix}`;
+  if (score >= 75) return `Strong activities profile with the depth ${pathLabel} schools look for.${balanceSuffix}`;
   if (score >= 60) {
     if (baseScore >= 80 && countMultiplier < 1.0) {
-      return `Impressive peak achievements, but admissions look for depth across multiple commitments.`;
+      return `Impressive peak achievements, but admissions look for depth across multiple commitments.${balanceSuffix}`;
     }
     if (baseScore < 60 && yearsMultiplier >= 1.05) {
-      return `Commendable commitment, but consider building toward a higher-distinction role.`;
+      return `Commendable commitment, but consider building toward a higher-distinction role.${balanceSuffix}`;
     }
-    return `Adequate activities profile for ${pathLabel} pathways, with room to deepen.`;
+    return `Adequate activities profile for ${pathLabel} pathways, with room to deepen.${balanceSuffix}`;
   }
-  if (score >= 40) return `Below the typical bar for ${pathLabel} schools — meaningful gaps to close.`;
-  return `Limited activities footprint for ${pathLabel} pathways.`;
+  if (score >= 40) return `Your activities are below the bar for ${pathLabel} schools.${balanceSuffix}`;
+  return `Limited activities footprint for ${pathLabel} pathways.${balanceSuffix}`;
 }
 
 export function calculateActivitiesScore(input: ActivitiesInput): ActivitiesResult {
@@ -72,10 +77,11 @@ export function calculateActivitiesScore(input: ActivitiesInput): ActivitiesResu
   const countMultiplier = COUNT_MULTIPLIER[input.activityCount];
   const yearsMultiplier = YEARS_MULTIPLIER[input.yearsOnTop];
   const spikeBonus = input.hasSpike ? 5 : 0;
+  const balanceBonus = (input.hasInSchoolActivities && input.hasOutOfSchoolActivities) ? 3 : 0;
 
-  const score = Math.min(100, Math.round((baseScore * countMultiplier * yearsMultiplier) + spikeBonus));
+  const score = Math.min(100, Math.round((baseScore * countMultiplier * yearsMultiplier) + spikeBonus + balanceBonus));
 
-  const signal = generateSignal(score, baseScore, countMultiplier, yearsMultiplier, input.path);
+  const signal = generateSignal(score, baseScore, countMultiplier, yearsMultiplier, input.path, balanceBonus);
 
   return {
     score,
@@ -83,6 +89,7 @@ export function calculateActivitiesScore(input: ActivitiesInput): ActivitiesResu
     countMultiplier,
     yearsMultiplier,
     spikeBonus,
+    balanceBonus,
     signal,
     scoringVersion: '1.0.0',
   };
